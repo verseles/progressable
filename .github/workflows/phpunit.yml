@@ -15,7 +15,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: nanasess/setup-php@v4
+    - uses: actions/checkout@v4
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate --strict
 
     - name: Cache Composer packages
       id: composer-cache
@@ -29,5 +32,5 @@ jobs:
     - name: Install dependencies
       run: composer install
 
-    - name: Run test suite using PHPUnit
+    - name: Run test suite
       run: composer run-script test
