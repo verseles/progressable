@@ -138,4 +138,4 @@ make
 
 ## License
 
-The Laravel Progressable package is open-sourced software licensed under the [MIT license](./LICENSE.md).
+The Progressable package is open-sourced software licensed under the [MIT license](./LICENSE.md).
