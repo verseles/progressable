@@ -1,0 +1,47 @@
+{
+  "name": "verseles/laravel-progressable",
+  "description": "A Laravel package to track and manage progress for different tasks or processes.",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Hélio Oliveira",
+      "email": "open@helio.me"
+    }
+  ],
+  "require": {
+    "php": "^8.0",
+    "illuminate/support": "^9.0",
+    "illuminate/cache": "^9.0",
+    "illuminate/contracts": "^9.0"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^7.40",
+    "phpunit/phpunit": "^9.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "Verseles\\Progressable\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Verseles\\Progressable\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Verseles\\Progressable\\ProgressableServiceProvider"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit tests/ProgressableTest.php"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
