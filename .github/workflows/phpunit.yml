@@ -27,7 +27,7 @@ jobs:
           ${{ runner.os }}-php-
 
     - name: Install dependencies
-      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+      run: composer install
 
     - name: Run test suite using PHPUnit
       run: composer run-script test
