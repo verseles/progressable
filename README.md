@@ -1,6 +1,8 @@
-# Progressable
+# Progressable 
 
 A Laravel [(not only)](#without-laravel) package to track and manage progress for different tasks or processes.
+
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/verseles/progressable/phpunit.yml?style=for-the-badge&label=PHPUnit)
 
 ## Installation
 
