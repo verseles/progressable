@@ -13,6 +13,6 @@ class UniqueNameNotSetException extends Exception
    */
   public function __construct()
   {
-    parent::__construct('You must set a unique name before updating progress.');
+    parent::__construct('You must set a unique name before updating progress');
   }
 }

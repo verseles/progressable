@@ -14,10 +14,6 @@ class ProgressableServiceProvider extends ServiceProvider
   public function register(): void
   {
     $this->mergeConfigFrom(__DIR__.'/../config/progressable.php', 'progressable');
-
-    $this->app->singleton('full-progress', function ($app) {
-      return new FullProgress('default');
-    });
   }
 
   /**
@@ -30,7 +26,6 @@ class ProgressableServiceProvider extends ServiceProvider
     if ($this->app->runningInConsole()) {
       $this->publishesConfig();
     }
-
   }
 
   /**

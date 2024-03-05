@@ -13,4 +13,6 @@ return [
   */
 
   'ttl' => env('PROGRESSABLE_TTL', 1140),
+
+  'prefix' => env('PROGRESSABLE_PREFIX', 'progressable'),
 ];

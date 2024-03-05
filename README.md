@@ -1,4 +1,4 @@
-```md
+````md
 # Progressable
 
 A Laravel (not only) package to track and manage progress for different tasks or processes.
@@ -10,6 +10,7 @@ You can install the package via composer:
 ```bash
 composer require verseles/progressable
 ```
+````
 
 You can publish the config file with:
 
@@ -17,45 +18,25 @@ You can publish the config file with:
 php artisan vendor:publish --provider="Verseles\Progressable\ProgressableServiceProvider" --tag="config"
 ```
 
-The contents of the published config file:
+The options of the published config file:
 
 ```php
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Cache Time-to-Live
-    |--------------------------------------------------------------------------
-    |
-    | This option specifies the default cache time-to-live (in minutes) for
-    | the progress data. You can override this value for individual instances
-    | of FullProgress by calling the setTtl() method.
-    |
-    */
+  'ttl' => env('PROGRESSABLE_TTL', 1140),
 
-    'ttl' => env('PROGRESSABLE_TTL', 1140),
+  'prefix' => env('PROGRESSABLE_PREFIX', 'progressable'),
 ];
 ```
 
 ## Usage
 
-This package provides two main classes: `FullProgress` and `Progressable`.
+This package provides a main classes (a trait): `Progressable`.
 
-### FullProgress
+### With Laravel
 
-The `FullProgress` class is used to get the overall progress (sum) of all classes that implement the `Progressable` trait. It is a singleton and can be accessed through the `FullProgress` facade.
+The `Progressable` trait can be used in any class that needs to track progress. It provides two main methods: `updateLocalProgress` and `getLocalProgress`.
 
-```php
-use Verseles\src\Facades\FullProgress;
-
-$fullProgress = FullProgress::make('my-progress');
-echo $fullProgress->getProgress(); // Output: 50 (for example)
-```
-
-The `make` method accepts a unique name as an argument, which allows you to have multiple overall progress instances without conflicts.
-
-### Progressable
-
-The `Progressable` trait can be used in any class that needs to track progress. It provides two main methods: `updateProgress` and `getProgress`.
+"Local" because anytime you can get "Overall" progress calling `getOverallProgressData()`. Local is your class/model/etc progress and Overall is the sum of all Progressable classes using the same key name.
 
 ```php
 use Verseles\src\Progressable;
@@ -66,23 +47,21 @@ class MyFirstTask
 
     public function __construct()
     {
-        $this->setUniqueName('my-job');
+        $this->setOverallUniqueName('my-job');
     }
 
     public function run()
     {
         // Some task logic...
-        $this->updateProgress(25);
+        $this->updateLocalProgress(25);
 
         // More task logic...
-        $this->updateProgress(75);
+        $this->updateLocalProgress(75);
 
         // ...
     }
 }
 ```
-
-Since FullProgress counts the overall progress, you can add a many progressabble as you want by referencing to the same unique name:
 
 ```php
 use Verseles\src\Progressable;
@@ -93,25 +72,61 @@ class MySecondTask
 
     public function __construct()
     {
-        $this->setUniqueName('my-job');
+        $this->setOverallUniqueName('my-job');
     }
 
     public function run()
     {
         // Some task logic...
-        $this->updateProgress(25);
+        $this->updateLocalProgress(25);
 
         // More task logic...
-        $this->updateProgress(75);
+        $this->updateLocalProgress(75);
 
         // ...
     }
 }
 ```
 
-Use the `setUniqueName` method to associate the progress of the class with a specific overall progress instance. The `updateProgress` method updates the progress for the current instance, and the `getProgress` method retrieves the current progress.
+Use the `setOverallUniqueName` method to associate the progress of the class with a specific overall progress instance. The `updateLocalProgress` method updates the progress for the current instance, and the `getLocalProgress` method retrieves the current progress. The `getOverallProgress` method retrieves the overall progress data.
 
 The progress value ranges from 0 to 100.
+
+### Without Laravel
+
+You can use the `Progressable` trait without Laravel. You need to provide a custom save and get data methods.
+
+Here is a very imaginary example:
+
+```php
+$overallUniqueName = 'test-without-laravel';
+
+$my_super_storage = [];
+
+$saveCallback = function ($key, $data, $ttl) use (&$my_super_storage) {
+  $my_super_storage[$key] = $data;
+};
+
+$getCallback = function ($key) use (&$my_super_storage) {
+  return $my_super_storage[$key] ?? [];
+};
+
+
+$obj1 = new class { use Progressable; };
+$obj1
+  ->setCustomSaveData($saveCallback)
+  ->setCustomGetData($getCallback)
+  ->setOverallUniqueName($overallUniqueName)
+  ->updateLocalProgress(25);
+
+$obj2 = new class { use Progressable; };
+$obj2
+  ->setCustomSaveData($saveCallback)
+  ->setCustomGetData($getCallback)
+  ->setOverallUniqueName($overallUniqueName)
+  ->updateLocalProgress(75);
+
+```
 
 ## Testing
 
@@ -123,4 +138,4 @@ make
 
 ## License
 
-The Laravel Progressable package is open-sourced software licensed under the [MIT license](LICENSE.md).
+The Laravel Progressable package is open-sourced software licensed under the [MIT license](./LICENSE.md).

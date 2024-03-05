@@ -28,9 +28,6 @@ ignore_extensions=""
 ignore_folders=()
 ignore_files=()
 
-# Clear output file otherwise it will append
-truncate -s 0 "$output_file"
-
 # Process parameters
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -65,6 +62,9 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Clear output file otherwise it will append
+truncate -s 0 "$output_file"
 
 # Verify if no parameter was provided
 if [[ ${#folders[@]} -eq 0 && ${#recursive_folders[@]} -eq 0 ]]; then

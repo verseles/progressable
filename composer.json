@@ -37,7 +37,7 @@
     }
   },
   "scripts": {
-    "test": "vendor/bin/phpunit tests/ProgressableTest.php"
+    "test": "vendor/bin/phpunit tests/ProgressableTest.php --testdox"
   },
   "config": {
     "sort-packages": true

@@ -1,10 +1,9 @@
 vendor/
 .env*
 .idea/
-
+.vscode/
 node_modules/
-
+.phpunit.result.cache
 *.log
 .DS_Store
-
-output.txt
+ai.txt
