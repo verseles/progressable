@@ -1,6 +1,6 @@
 {
-  "name": "verseles/laravel-progressable",
-  "description": "A Laravel package to track and manage progress for different tasks or processes.",
+  "name": "verseles/progressable",
+  "description": "A Laravel (not only) package to track and manage progress for different tasks or processes.",
   "type": "library",
   "license": "MIT",
   "authors": [
