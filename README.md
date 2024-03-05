@@ -1,4 +1,3 @@
-````md
 # Progressable
 
 A Laravel (not only) package to track and manage progress for different tasks or processes.
@@ -10,9 +9,8 @@ You can install the package via composer:
 ```bash
 composer require verseles/progressable
 ```
-````
 
-You can publish the config file with:
+Optionally, you can publish the config file with:
 
 ```bash
 php artisan vendor:publish --provider="Verseles\Progressable\ProgressableServiceProvider" --tag="config"
@@ -30,7 +28,7 @@ return [
 
 ## Usage
 
-This package provides a main classes (a trait): `Progressable`.
+This package provides a main class (a trait): `Progressable`.
 
 ### With Laravel
 
