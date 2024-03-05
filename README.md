@@ -1,6 +1,6 @@
 # Progressable
 
-A Laravel (not only) package to track and manage progress for different tasks or processes.
+A Laravel [(not only)](#without-laravel) package to track and manage progress for different tasks or processes.
 
 ## Installation
 
