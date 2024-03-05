@@ -1,6 +1,5 @@
 {
   "name": "verseles/progressable",
-  "version": "1.0.0",
   "description": "A Laravel (not only) package to track and manage progress for different tasks or processes.",
   "type": "library",
   "license": "MIT",
