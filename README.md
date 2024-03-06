@@ -39,7 +39,7 @@ The `Progressable` trait can be used in any class that needs to track progress. 
 "Local" because anytime you can get "Overall" progress calling `getOverallProgressData()`. Local is your class/model/etc progress and Overall is the sum of all Progressable classes using the same key name.
 
 ```php
-use Verseles\src\Progressable;
+use Verseles\Progressable;
 
 class MyFirstTask
 {
@@ -64,7 +64,7 @@ class MyFirstTask
 ```
 
 ```php
-use Verseles\src\Progressable;
+use Verseles\Progressable;
 
 class MySecondTask
 {
