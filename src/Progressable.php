@@ -17,9 +17,9 @@ trait Progressable
   /**
    * The progress value for this instance.
    *
-   * @var int
+   * @var float
    */
-  protected int $progress = 0;
+  protected float $progress = 0;
 
   /**
    * The callback function for saving cache data.
@@ -80,7 +80,7 @@ trait Progressable
   /**
    * Get the overall progress for the unique name.
    *
-   * @return int
+   * @return float
    */
   public function getOverallProgress(): float
   {
@@ -113,11 +113,11 @@ trait Progressable
   /**
    * Update the progress value for this instance.
    *
-   * @param int $progress
+   * @param float $progress
    * @return $this
    * @throws UniqueNameNotSetException
    */
-  public function updateLocalProgress(int $progress): static
+  public function updateLocalProgress(float $progress): static
   {
     $this->progress = max(0, min(100, $progress));
     $this->updateProgressData();
@@ -256,9 +256,9 @@ trait Progressable
   /**
    * Get the progress value for this instance.
    *
-   * @return int
+   * @return float
    */
-  public function getLocalProgress(): int
+  public function getLocalProgress(): float
   {
     return $this->progress;
   }
