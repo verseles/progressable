@@ -156,7 +156,7 @@ trait Progressable
   {
     $this->overallUniqueName = $overallUniqueName;
 
-    if ($this->getLocalProgress(0) === 0) {
+    if ($this->getLocalProgress(0) == 0) {
       // This make sure that the class who called this method will be part of the overall progress calculation
       $this->resetLocalProgress();
     }
@@ -275,7 +275,7 @@ trait Progressable
   public function setPrefixStorageKey(string $prefixStorageKey): static
   {
     $this->customPrefixStorageKey = $prefixStorageKey;
-    
+
     return $this;
   }
 
