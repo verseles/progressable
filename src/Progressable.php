@@ -88,7 +88,7 @@ trait Progressable
     $progressData = $this->getOverallProgressData();
 
     $totalProgress = array_sum(array_column($progressData, "progress"));
-    $totalCount = count($progressData);
+    $totalCount    = count($progressData);
 
     if ($totalCount === 0) {
       return 0;
@@ -109,6 +109,79 @@ trait Progressable
     }
 
     return Cache::get($this->getStorageKeyName(), []);
+  }
+
+  /**
+   * Get the cache key for the unique name.
+   *
+   * @return string
+   */
+  protected function getStorageKeyName(): string
+  {
+    return $this->getPrefixStorageKey() . $this->getOverallUniqueName();
+  }
+
+  /**
+   * Retrieve the prefix storage key for the PHP function.
+   *
+   * @return string
+   */
+  protected function getPrefixStorageKey(): string
+  {
+    return $this->customPrefixStorageKey ?? config("progressable.prefix", $this->defaultPrefixStorageKey);
+  }
+
+  /**
+   * Get the overall unique name.
+   *
+   * @return string the overall unique name
+   * @throws UniqueNameNotSetException If the overall unique name is not set
+   */
+  public function getOverallUniqueName()
+  {
+    if (!isset($this->overallUniqueName) || empty($this->overallUniqueName)) {
+      throw new UniqueNameNotSetException();
+    }
+
+    return $this->overallUniqueName;
+  }
+
+  /**
+   * Set the unique name of the overall progress.
+   *
+   * @param string $overallUniqueName
+   * @return $this
+   */
+  public function setOverallUniqueName(string $overallUniqueName): static
+  {
+    $this->overallUniqueName = $overallUniqueName;
+
+    if ($this->getLocalProgress(0) === 0) {
+      // This make sure that the class who called this method will be part of the overall progress calculation
+      $this->resetLocalProgress();
+    }
+
+    return $this;
+  }
+
+  /**
+   * Get the progress value for this instance
+   *
+   * @param int $precision The precision of the local progress
+   * @return float
+   */
+  public function getLocalProgress(int $precision = 2): float
+  {
+    return round($this->progress, $precision);
+  }
+
+  /**
+   * @return static
+   * @throws UniqueNameNotSetException
+   */
+  public function resetLocalProgress(): static
+  {
+    return $this->setLocalProgress(0);
   }
 
   /**
@@ -139,25 +212,6 @@ trait Progressable
     ];
 
     return $this->saveOverallProgressData($progressData);
-  }
-
-  /**
-   * Reset the overall progress.
-   *
-   * @return static
-   */
-  public function resetOverallProgress(): static
-  {
-    return $this->saveOverallProgressData([]);
-  }
-
-  /**
-   * @return static
-   * @throws UniqueNameNotSetException
-   */
-  public function resetLocalProgress(): static
-  {
-    return $this->setLocalProgress(0);
   }
 
   /**
@@ -193,23 +247,23 @@ trait Progressable
   }
 
   /**
-   * Get the cache key for the unique name.
+   * Get the storage time-to-live in minutes.
    *
-   * @return string
+   * @return int
    */
-  protected function getStorageKeyName(): string
+  public function getTTL(): int
   {
-    return $this->getPrefixStorageKey() . $this->getOverallUniqueName();
+    return $this->customTTL ?? config("progressable.ttl", $this->defaultTTL);
   }
 
   /**
-   * Retrieve the prefix storage key for the PHP function.
+   * Reset the overall progress.
    *
-   * @return string
+   * @return static
    */
-  protected function getPrefixStorageKey(): string
+  public function resetOverallProgress(): static
   {
-    return $this->customPrefixStorageKey ?? config("progressable.prefix", $this->defaultPrefixStorageKey);
+    return $this->saveOverallProgressData([]);
   }
 
   /**
@@ -221,45 +275,8 @@ trait Progressable
   public function setPrefixStorageKey(string $prefixStorageKey): static
   {
     $this->customPrefixStorageKey = $prefixStorageKey;
-
+    
     return $this;
-  }
-  /**
-   * Get the overall unique name.
-   *
-   * @throws UniqueNameNotSetException If the overall unique name is not set
-   * @return string the overall unique name
-   */
-  public function getOverallUniqueName()
-  {
-    if (!isset($this->overallUniqueName) || empty($this->overallUniqueName)) {
-      throw new UniqueNameNotSetException();
-    }
-
-    return $this->overallUniqueName;
-  }
-
-  /**
-   * Set the unique name of the overall progress.
-   *
-   * @param string $overallUniqueName
-   * @return $this
-   */
-  public function setOverallUniqueName(string $overallUniqueName): static
-  {
-    $this->overallUniqueName = $overallUniqueName;
-
-    return $this;
-  }
-
-  /**
-   * Get the storage time-to-live in minutes.
-   *
-   * @return int
-   */
-  public function getTTL(): int
-  {
-    return $this->customTTL ?? config("progressable.ttl", $this->defaultTTL);
   }
 
   /**
@@ -272,16 +289,5 @@ trait Progressable
   {
     $this->customTTL = $TTL;
     return $this;
-  }
-
-  /**
-   * Get the progress value for this instance
-   *
-   * @param int $precision The precision of the local progress
-   * @return float
-   */
-  public function getLocalProgress(int $precision = 2): float
-  {
-    return round($this->progress, $precision);
   }
 }
