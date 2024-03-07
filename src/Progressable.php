@@ -3,6 +3,7 @@
 namespace Verseles\Progressable;
 
 use Illuminate\Support\Facades\Cache;
+use Verseles\Progressable\Exceptions\UniqueNameAlreadySetException;
 use Verseles\Progressable\Exceptions\UniqueNameNotSetException;
 
 trait Progressable
@@ -48,6 +49,8 @@ trait Progressable
    * @var null|int
    */
   protected $customTTL = null;
+
+  protected string|null $localKey = null;
 
   protected string $defaultPrefixStorageKey = "progressable";
 
@@ -118,7 +121,7 @@ trait Progressable
    */
   protected function getStorageKeyName(): string
   {
-    return $this->getPrefixStorageKey() . $this->getOverallUniqueName();
+    return $this->getPrefixStorageKey() . '_' . $this->getOverallUniqueName();
   }
 
   /**
@@ -156,12 +159,21 @@ trait Progressable
   {
     $this->overallUniqueName = $overallUniqueName;
 
+    $this->makeSureLocalIsPartOfTheCalc();
+
+    return $this;
+  }
+
+  /**
+   * @return void
+   * @throws UniqueNameNotSetException
+   */
+  public function makeSureLocalIsPartOfTheCalc(): void
+  {
     if ($this->getLocalProgress(0) == 0) {
       // This make sure that the class who called this method will be part of the overall progress calculation
       $this->resetLocalProgress();
     }
-
-    return $this;
   }
 
   /**
@@ -219,9 +231,32 @@ trait Progressable
    *
    * @return string
    */
-  protected function getLocalKey(): string
+  public function getLocalKey(): string
   {
-    return get_class($this) . "@" . spl_object_hash($this);
+    return $this->localKey ?? get_class($this) . "@" . spl_object_hash($this);
+  }
+
+  /**
+   * Set the local key
+   *
+   * @param string $name
+   * @return $this
+   */
+  public function setLocalKey(string $name): static
+  {
+    if (isset($this->getOverallProgressData()[$this->getLocalKey()])) {
+      // Rename the local key preserving the data
+      $overallProgressData        = $this->getOverallProgressData();
+      $overallProgressData[$name] = $overallProgressData[$this->getLocalKey()];
+      unset($overallProgressData[$this->getLocalKey()]);
+      $this->saveOverallProgressData($overallProgressData);
+    }
+
+    $this->localKey = $name;
+
+    $this->makeSureLocalIsPartOfTheCalc();
+
+    return $this;
   }
 
   /**
@@ -270,10 +305,15 @@ trait Progressable
    * Set the prefix storage key.
    *
    * @param string $prefixStorageKey The prefix storage key to set.
+   * @throw UniqueNameAlreadySetException If the unique name has already been set
    * @return static
    */
   public function setPrefixStorageKey(string $prefixStorageKey): static
   {
+    if (isset($this->overallUniqueName)) {
+      throw new UniqueNameAlreadySetException();
+    }
+
     $this->customPrefixStorageKey = $prefixStorageKey;
 
     return $this;

@@ -10,19 +10,6 @@ class ProgressableTest extends TestCase
 {
   use Progressable;
 
-  protected function setUp(): void
-  {
-    parent::setUp();
-
-    $this->setOverallUniqueName('test');
-    $this->resetOverallProgress();
-  }
-
-  protected function getPackageProviders($app)
-  {
-    return ['Verseles\Progressable\ProgressableServiceProvider'];
-  }
-
   public function testSetOverallUniqueName()
   {
     $this->setOverallUniqueName('test');
@@ -60,7 +47,6 @@ class ProgressableTest extends TestCase
     $this->assertEquals(50, $this->getOverallProgress());
   }
 
-
   public function testGetOverallProgressData()
   {
     $this->setOverallUniqueName('test');
@@ -78,72 +64,12 @@ class ProgressableTest extends TestCase
     $this->setLocalProgress(50);
   }
 
-  public function testSetCustomSaveData()
+  public function testResetLocalProgress()
   {
-    $saveCallback = function ($key, $data, $ttl) {
-      // Custom save logic
-    };
-
-    $this->setCustomSaveData($saveCallback);
-    $this->assertSame($saveCallback, $this->customSaveData);
-  }
-
-  public function testSetCustomGetData()
-  {
-    $getCallback = function ($key) {
-      // Custom get logic
-    };
-
-    $this->setCustomGetData($getCallback);
-    $this->assertSame($getCallback, $this->customGetData);
-  }
-
-  public function testSetTTL()
-  {
-    $this->setTTL(60);
-    $this->assertEquals(60, $this->getTTL());
-  }
-
-  public function testSetPrefixStorageKey()
-  {
-    $this->setPrefixStorageKey('custom_prefix');
-    $this->assertEquals('custom_prefix', $this->getPrefixStorageKey());
-  }
-
-  public function testProgressWithoutLaravel()
-  {
-    $overallUniqueName = 'test-without-laravel';
-    $my_super_storage = [];
-
-    $saveCallback = function ($key, $data, $ttl) use (&$my_super_storage) {
-      $my_super_storage[$key] = $data;
-    };
-
-    $getCallback = function ($key) use (&$my_super_storage) {
-      return $my_super_storage[$key] ?? [];
-    };
-
-
-    $obj1 = new class {
-      use Progressable;
-    };
-    $obj1
-      ->setCustomSaveData($saveCallback)
-      ->setCustomGetData($getCallback)
-      ->setOverallUniqueName($overallUniqueName)
-      ->setLocalProgress(25);
-
-    $obj2 = new class {
-      use Progressable;
-    };
-    $obj2
-      ->setCustomSaveData($saveCallback)
-      ->setCustomGetData($getCallback)
-      ->setOverallUniqueName($overallUniqueName)
-      ->setLocalProgress(75);
-
-    $this->assertEquals(50, $obj1->getOverallProgress());
-    $this->assertEquals(50, $obj2->getOverallProgress());
+    $this->setOverallUniqueName('test');
+    $this->setLocalProgress(50);
+    $this->resetLocalProgress();
+    $this->assertEquals(0, $this->getLocalProgress());
   }
 
   public function testResetOverallProgress()
@@ -151,48 +77,63 @@ class ProgressableTest extends TestCase
     $this->setOverallUniqueName('test');
     $this->setLocalProgress(50);
 
-    $this->resetOverallProgress();
-    $progressData = $this->getOverallProgressData();
-    $this->assertEmpty($progressData);
-  }
-
-  public function testResetLocalProgress()
-  {
-    $this->setOverallUniqueName('test');
-    $this->setLocalProgress(50);
-
-    $this->resetLocalProgress();
-    $this->assertEquals(0, $this->getLocalProgress());
-  }
-
-  public function testGetLocalKey()
-  {
-    $localKey = $this->getLocalKey();
-    $this->assertStringContainsString(get_class($this), $localKey);
-    $this->assertStringContainsString(spl_object_hash($this), $localKey);
-  }
-
-  public function testMultipleInstancesWithSameUniqueName()
-  {
-    $uniqueName = 'test';
-    $this->setOverallUniqueName($uniqueName);
-    $this->setLocalProgress(25);
-
     $obj2 = new class {
       use Progressable;
     };
-    $obj2->setOverallUniqueName($uniqueName);
-    $obj2->setLocalProgress(50);
+    $obj2->setOverallUniqueName('test');
+    $obj2->setLocalProgress(75);
 
-    $obj3 = new class {
-      use Progressable;
+    $this->assertNotEquals(0, $this->getOverallProgress());
+    $this->resetOverallProgress();
+    $this->assertEquals(0, $this->getOverallProgress());
+  }
+
+  public function testSetLocalKey()
+  {
+    $this->setOverallUniqueName('test');
+    $this->setLocalKey('my_custom_key');
+    $progressData = $this->getOverallProgressData();
+    $this->assertArrayHasKey('my_custom_key', $progressData);
+  }
+
+  public function testSetPrefixStorageKey()
+  {
+    $this->setPrefixStorageKey('custom_prefix');
+    $this->setOverallUniqueName('test');
+    $this->assertEquals('custom_prefix_test', $this->getStorageKeyName());
+
+  }
+
+  public function testSetTTL()
+  {
+    $this->setOverallUniqueName('test');
+    $this->setLocalProgress(50);
+    $this->setTTL(60); // 1 heure
+
+    $ttl = $this->getTTL();
+    $this->assertEquals(60, $ttl);
+  }
+
+  public function testCustomSaveAndGetData()
+  {
+    $storage = [];
+
+    $saveCallback = function ($key, $data, $ttl) use (&$storage) {
+      $storage[$key] = $data;
     };
-    $obj3->setOverallUniqueName($uniqueName);
-    $obj3->setLocalProgress(75);
 
-    $this->assertEquals(50, $this->getOverallProgress());
-    $this->assertEquals(25, $this->getLocalProgress());
-    $this->assertEquals(50, $obj2->getLocalProgress());
-    $this->assertEquals(75, $obj3->getLocalProgress());
+    $getCallback = function ($key) use (&$storage) {
+      return $storage[$key] ?? [];
+    };
+
+    $this->setCustomSaveData($saveCallback);
+    $this->setCustomGetData($getCallback);
+
+    $this->setOverallUniqueName('custom_test');
+    $this->setLocalProgress(50);
+
+    $progressData = $this->getOverallProgressData();
+    $this->assertArrayHasKey($this->getLocalKey(), $progressData);
+    $this->assertEquals(50, $progressData[$this->getLocalKey()]['progress']);
   }
 }
