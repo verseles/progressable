@@ -1,5 +1,4 @@
-```
-# Progressable 
+# Progressable 🚀
 
 A Laravel [(not only)](#without-laravel) package to track and manage progress for different tasks or processes.
 
@@ -7,7 +6,7 @@ A Laravel [(not only)](#without-laravel) package to track and manage progress fo
 
 ## Installation
 
-You can install the package via composer:
+Install the package via Composer:
 
 ```bash
 composer require verseles/progressable
@@ -19,25 +18,27 @@ Optionally, you can publish the config file with:
 php artisan vendor:publish --provider="Verseles\Progressable\ProgressableServiceProvider" --tag="config"
 ```
 
-The options of the published config file:
+## Configuration
+
+The published config file provides the following options:
 
 ```php
 return [
-  'ttl' => env('PROGRESSABLE_TTL', 1140),
+  'ttl' => env('PROGRESSABLE_TTL', 1140), // Default cache time-to-live (in minutes)
 
-  'prefix' => env('PROGRESSABLE_PREFIX', 'progressable'),
+  'prefix' => env('PROGRESSABLE_PREFIX', 'progressable'), // Cache key prefix
 ];
 ```
 
 ## Usage
 
-This package provides a main class (a trait): `Progressable`.
+This package provides a main trait: `Progressable`.
 
 ### With Laravel
 
 The `Progressable` trait can be used in any class that needs to track progress. It provides two main methods: `updateLocalProgress` and `getLocalProgress`.
 
-"Local" because anytime you can get "Overall" progress calling `getOverallProgressData()`. Local is your class/model/etc progress and Overall is the sum of all Progressable classes using the same key name.
+"Local" refers to the progress of your class/model/etc, while "Overall" represents the sum of all Progressable classes using the same key name.
 
 ### Example
 ```php
@@ -86,17 +87,17 @@ class MySecondTask
 }
 ```
 
-* Use the `setOverallUniqueName` method to associate the progress of the class with a specific overall progress instance
-* `setLocalProgress` method updates the progress for the current instance.
-* `getLocalProgress` method retrieves the current progress.
-* `getOverallProgress` method retrieves the overall progress data.
-* `resetOverallProgress` is good to be called after set unique name for the first time in your first class if your progress will run more then once to avoid wrong calculations in cache.
+- Use `setOverallUniqueName` to associate the progress with a specific overall progress instance.
+- `setLocalProgress` updates the progress for the current instance.
+- `getLocalProgress` retrieves the current progress.
+- `getOverallProgress` retrieves the overall progress data.
+- `resetOverallProgress` resets the overall progress (recommended after setting the unique name for the first time).
 
 The progress value ranges from 0 to 100.
 
 ### Without Laravel
 
-You can use the `Progressable` trait without Laravel. You need to provide a custom save and get data methods.
+You can use the `Progressable` trait without Laravel by providing custom save and get data methods.
 
 ### Example
 
@@ -133,7 +134,7 @@ $obj2
 
 ## Testing
 
-You can run the tests with:
+To run the tests, execute the following command:
 
 ```bash
 make
@@ -142,4 +143,3 @@ make
 ## License
 
 The Progressable package is open-sourced software licensed under the [MIT license](./LICENSE.md).
-```
