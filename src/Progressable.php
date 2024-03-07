@@ -94,7 +94,7 @@ trait Progressable
       return 0;
     }
 
-    return round($totalProgress / $totalCount, $precision);
+    return round($totalProgress / $totalCount, $precision, PHP_ROUND_HALF_ODD);
   }
 
   /**
@@ -172,7 +172,7 @@ trait Progressable
    */
   public function getLocalProgress(int $precision = 2): float
   {
-    return round($this->progress, $precision);
+    return round($this->progress, $precision, PHP_ROUND_HALF_ODD);
   }
 
   /**
