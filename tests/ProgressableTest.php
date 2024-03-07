@@ -10,6 +10,14 @@ class ProgressableTest extends TestCase
 {
   use Progressable;
 
+  protected function setUp(): void
+  {
+    parent::setUp();
+
+    $this->setOverallUniqueName('test');
+    $this->resetOverallProgress();
+  }
+
   protected function getPackageProviders($app)
   {
     return ['Verseles\Progressable\ProgressableServiceProvider'];
@@ -24,16 +32,16 @@ class ProgressableTest extends TestCase
   public function testUpdateLocalProgress()
   {
     $this->setOverallUniqueName('test');
-    $this->updateLocalProgress(50);
+    $this->setLocalProgress(50);
     $this->assertEquals(50, $this->getLocalProgress());
   }
 
   public function testUpdateLocalProgressBounds()
   {
     $this->setOverallUniqueName('test');
-    $this->updateLocalProgress(-10);
+    $this->setLocalProgress(-10);
     $this->assertEquals(0, $this->getLocalProgress());
-    $this->updateLocalProgress(120);
+    $this->setLocalProgress(120);
     $this->assertEquals(100, $this->getLocalProgress());
   }
 
@@ -41,21 +49,22 @@ class ProgressableTest extends TestCase
   {
     $uniqueName = 'test';
     $this->setOverallUniqueName($uniqueName);
-    $this->updateLocalProgress(25);
+    $this->setLocalProgress(25);
 
     $obj2 = new class {
       use Progressable;
     };
     $obj2->setOverallUniqueName($uniqueName);
-    $obj2->updateLocalProgress(75);
+    $obj2->setLocalProgress(75);
 
     $this->assertEquals(50, $this->getOverallProgress());
   }
 
+
   public function testGetOverallProgressData()
   {
     $this->setOverallUniqueName('test');
-    $this->updateLocalProgress(50);
+    $this->setLocalProgress(50);
 
     $progressData = $this->getOverallProgressData();
     $this->assertArrayHasKey($this->getLocalKey(), $progressData);
@@ -64,8 +73,9 @@ class ProgressableTest extends TestCase
 
   public function testUpdateLocalProgressWithoutUniqueName()
   {
+    $this->overallUniqueName = '';
     $this->expectException(UniqueNameNotSetException::class);
-    $this->updateLocalProgress(50);
+    $this->setLocalProgress(50);
   }
 
   public function testSetCustomSaveData()
@@ -113,6 +123,7 @@ class ProgressableTest extends TestCase
       return $my_super_storage[$key] ?? [];
     };
 
+
     $obj1 = new class {
       use Progressable;
     };
@@ -120,7 +131,7 @@ class ProgressableTest extends TestCase
       ->setCustomSaveData($saveCallback)
       ->setCustomGetData($getCallback)
       ->setOverallUniqueName($overallUniqueName)
-      ->updateLocalProgress(25);
+      ->setLocalProgress(25);
 
     $obj2 = new class {
       use Progressable;
@@ -129,11 +140,59 @@ class ProgressableTest extends TestCase
       ->setCustomSaveData($saveCallback)
       ->setCustomGetData($getCallback)
       ->setOverallUniqueName($overallUniqueName)
-      ->updateLocalProgress(75);
+      ->setLocalProgress(75);
 
-    $this->assertEquals(25, $obj1->getLocalProgress());
-    $this->assertEquals(75, $obj2->getLocalProgress());
     $this->assertEquals(50, $obj1->getOverallProgress());
     $this->assertEquals(50, $obj2->getOverallProgress());
+  }
+
+  public function testResetOverallProgress()
+  {
+    $this->setOverallUniqueName('test');
+    $this->setLocalProgress(50);
+
+    $this->resetOverallProgress();
+    $progressData = $this->getOverallProgressData();
+    $this->assertEmpty($progressData);
+  }
+
+  public function testResetLocalProgress()
+  {
+    $this->setOverallUniqueName('test');
+    $this->setLocalProgress(50);
+
+    $this->resetLocalProgress();
+    $this->assertEquals(0, $this->getLocalProgress());
+  }
+
+  public function testGetLocalKey()
+  {
+    $localKey = $this->getLocalKey();
+    $this->assertStringContainsString(get_class($this), $localKey);
+    $this->assertStringContainsString(spl_object_hash($this), $localKey);
+  }
+
+  public function testMultipleInstancesWithSameUniqueName()
+  {
+    $uniqueName = 'test';
+    $this->setOverallUniqueName($uniqueName);
+    $this->setLocalProgress(25);
+
+    $obj2 = new class {
+      use Progressable;
+    };
+    $obj2->setOverallUniqueName($uniqueName);
+    $obj2->setLocalProgress(50);
+
+    $obj3 = new class {
+      use Progressable;
+    };
+    $obj3->setOverallUniqueName($uniqueName);
+    $obj3->setLocalProgress(75);
+
+    $this->assertEquals(50, $this->getOverallProgress());
+    $this->assertEquals(25, $this->getLocalProgress());
+    $this->assertEquals(50, $obj2->getLocalProgress());
+    $this->assertEquals(75, $obj3->getLocalProgress());
   }
 }

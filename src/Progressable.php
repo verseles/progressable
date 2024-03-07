@@ -118,28 +118,46 @@ trait Progressable
    * @return $this
    * @throws UniqueNameNotSetException
    */
-  public function updateLocalProgress(float $progress): static
+  public function setLocalProgress(float $progress): static
   {
     $this->progress = max(0, min(100, $progress));
-    $this->updateProgressData();
 
-    return $this;
+    return $this->updateLocalProgressData($this->progress);
   }
 
   /**
    * Update the progress data in storage.
    *
-   * @return void
+   * @return static
    */
-  protected function updateProgressData(): void
+  protected function updateLocalProgressData(float $progress): static
   {
     $progressData = $this->getOverallProgressData();
 
     $progressData[$this->getLocalKey()] = [
-      "progress" => $this->progress,
+      "progress" => $progress,
     ];
 
-    $this->saveOverallProgressData($progressData);
+    return $this->saveOverallProgressData($progressData);
+  }
+
+  /**
+   * Reset the overall progress.
+   *
+   * @return static
+   */
+  public function resetOverallProgress(): static
+  {
+    return $this->saveOverallProgressData([]);
+  }
+
+  /**
+   * @return static
+   * @throws UniqueNameNotSetException
+   */
+  public function resetLocalProgress(): static
+  {
+    return $this->setLocalProgress(0);
   }
 
   /**
@@ -156,9 +174,9 @@ trait Progressable
    * Save the overall progress data to the storage.
    *
    * @param array $progressData
-   * @return void
+   * @return static
    */
-  public function saveOverallProgressData(array $progressData): void
+  protected function saveOverallProgressData(array $progressData): static
   {
     if ($this->customSaveData !== null) {
       call_user_func(
@@ -170,6 +188,8 @@ trait Progressable
     } else {
       Cache::put($this->getStorageKeyName(), $progressData, $this->getTTL());
     }
+
+    return $this;
   }
 
   /**
@@ -212,7 +232,7 @@ trait Progressable
    */
   public function getOverallUniqueName()
   {
-    if (!isset($this->overallUniqueName)) {
+    if (!isset($this->overallUniqueName) || empty($this->overallUniqueName)) {
       throw new UniqueNameNotSetException();
     }
 
@@ -255,7 +275,7 @@ trait Progressable
   }
 
   /**
-   * Get the progress value for this instance.
+   * Get the progress value for this instance
    *
    * @param int $precision The precision of the local progress
    * @return float
