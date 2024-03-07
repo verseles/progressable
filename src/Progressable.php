@@ -80,9 +80,10 @@ trait Progressable
   /**
    * Get the overall progress for the unique name.
    *
+   * @param int $precision The precision of the overall progress
    * @return float
    */
-  public function getOverallProgress(): float
+  public function getOverallProgress(int $precision = 2): float
   {
     $progressData = $this->getOverallProgressData();
 
@@ -93,7 +94,7 @@ trait Progressable
       return 0;
     }
 
-    return round($totalProgress / $totalCount, 2);
+    return round($totalProgress / $totalCount, $precision);
   }
 
   /**
@@ -256,10 +257,11 @@ trait Progressable
   /**
    * Get the progress value for this instance.
    *
+   * @param int $precision The precision of the local progress
    * @return float
    */
-  public function getLocalProgress(): float
+  public function getLocalProgress(int $precision = 2): float
   {
-    return $this->progress;
+    return round($precision);
   }
 }
