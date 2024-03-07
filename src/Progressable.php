@@ -262,6 +262,6 @@ trait Progressable
    */
   public function getLocalProgress(int $precision = 2): float
   {
-    return round($precision);
+    return round($this->progress, $precision);
   }
 }
