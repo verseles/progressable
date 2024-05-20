@@ -11,13 +11,9 @@
   ],
   "require": {
     "php": ">=8.2",
-    "illuminate/support": "^v10",
-    "illuminate/cache": "^10",
-    "illuminate/contracts": "^10"
-  },
-  "require-dev": {
-    "orchestra/testbench": "^8.18",
-    "phpunit/phpunit": "^10.5"
+    "illuminate/support": "^v11",
+    "illuminate/cache": "^11",
+    "illuminate/contracts": "^11"
   },
   "autoload": {
     "psr-4": {
@@ -43,5 +39,9 @@
     "sort-packages": true
   },
   "minimum-stability": "dev",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "require-dev": {
+    "orchestra/testbench": "^9.0",
+    "phpunit/phpunit": "^11.1"
+  }
 }
