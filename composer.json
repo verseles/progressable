@@ -10,10 +10,10 @@
     }
   ],
   "require": {
-    "php": ">=8.2",
-    "illuminate/support": "^v11",
-    "illuminate/cache": "^11",
-    "illuminate/contracts": "^11"
+    "php": ">=8.4",
+    "illuminate/support": "^v11|^v12",
+    "illuminate/cache": "^11|^v12",
+    "illuminate/contracts": "^11|^v12"
   },
   "autoload": {
     "psr-4": {
@@ -42,6 +42,6 @@
   "prefer-stable": true,
   "require-dev": {
     "orchestra/testbench": "^9.0",
-    "phpunit/phpunit": "^11.1"
+    "phpunit/phpunit": "^12"
   }
 }
