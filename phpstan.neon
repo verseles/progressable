@@ -1,0 +1,13 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - src
+        - phpstan-bootstrap.php
+    level: 5
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # False positive with traits returning static
+        - '#should return \$this\(.+\) but returns static\(.+\)#'
