@@ -28,6 +28,7 @@ class ProgressableTest extends TestCase {
         $this->customTTL = null;
         $this->localKey = null;
         $this->customPrefixStorageKey = null;
+        $this->customPrecision = null;
 
         // Unset overallUniqueName to simulate fresh state
         unset($this->overallUniqueName);
@@ -200,5 +201,134 @@ class ProgressableTest extends TestCase {
         $this->assertEquals(33.33, $this->getLocalProgress(2));
         $this->assertEquals(33.333, $this->getLocalProgress(3));
         $this->assertEquals(33, $this->getLocalProgress(0));
+    }
+
+    public function test_increment_local_progress(): void {
+        $this->setOverallUniqueName('test_increment_'.$this->testId);
+        $this->setLocalProgress(10);
+
+        $this->incrementLocalProgress(5);
+        $this->assertEquals(15, $this->getLocalProgress());
+
+        $this->incrementLocalProgress(10);
+        $this->assertEquals(25, $this->getLocalProgress());
+    }
+
+    public function test_increment_local_progress_with_negative(): void {
+        $this->setOverallUniqueName('test_decrement_'.$this->testId);
+        $this->setLocalProgress(50);
+
+        $this->incrementLocalProgress(-10);
+        $this->assertEquals(40, $this->getLocalProgress());
+    }
+
+    public function test_increment_local_progress_respects_bounds(): void {
+        $this->setOverallUniqueName('test_increment_bounds_'.$this->testId);
+        $this->setLocalProgress(95);
+
+        $this->incrementLocalProgress(10);
+        $this->assertEquals(100, $this->getLocalProgress());
+
+        $this->setLocalProgress(5);
+        $this->incrementLocalProgress(-10);
+        $this->assertEquals(0, $this->getLocalProgress());
+    }
+
+    public function test_is_complete(): void {
+        $this->setOverallUniqueName('test_is_complete_'.$this->testId);
+
+        $this->setLocalProgress(50);
+        $this->assertFalse($this->isComplete());
+
+        $this->setLocalProgress(99.99);
+        $this->assertFalse($this->isComplete());
+
+        $this->setLocalProgress(100);
+        $this->assertTrue($this->isComplete());
+    }
+
+    public function test_is_overall_complete(): void {
+        $uniqueName = 'test_is_overall_complete_'.$this->testId;
+        $this->setOverallUniqueName($uniqueName);
+        $this->setLocalProgress(100);
+
+        $obj2 = new class {
+            use Progressable;
+        };
+        $obj2->setOverallUniqueName($uniqueName);
+        $obj2->setLocalProgress(50);
+
+        $this->assertFalse($this->isOverallComplete());
+
+        $obj2->setLocalProgress(100);
+        $this->assertTrue($this->isOverallComplete());
+    }
+
+    public function test_remove_local_from_overall(): void {
+        $uniqueName = 'test_remove_local_'.$this->testId;
+        $this->setOverallUniqueName($uniqueName);
+        $this->setLocalKey('instance_1');
+        $this->setLocalProgress(50);
+
+        $obj2 = new class {
+            use Progressable;
+        };
+        $obj2->setOverallUniqueName($uniqueName);
+        $obj2->setLocalKey('instance_2');
+        $obj2->setLocalProgress(100);
+
+        // Both instances contribute to overall progress
+        $this->assertEquals(75, $this->getOverallProgress());
+
+        // Remove first instance
+        $this->removeLocalFromOverall();
+
+        // Only second instance remains
+        $progressData = $this->getOverallProgressData();
+        $this->assertArrayNotHasKey('instance_1', $progressData);
+        $this->assertArrayHasKey('instance_2', $progressData);
+        $this->assertEquals(100, $this->getOverallProgress());
+
+        // Local progress should be reset to 0
+        $this->assertEquals(0, $this->progress);
+    }
+
+    public function test_set_precision(): void {
+        $this->setOverallUniqueName('test_set_precision_'.$this->testId);
+        $this->setLocalProgress(33.33333);
+
+        // Default precision
+        $this->assertEquals(33.33, $this->getLocalProgress());
+
+        // Custom precision
+        $this->setPrecision(4);
+        $this->assertEquals(4, $this->getPrecision());
+        $this->assertEquals(33.3333, $this->getLocalProgress());
+
+        // Precision 0
+        $this->setPrecision(0);
+        $this->assertEquals(33, $this->getLocalProgress());
+    }
+
+    public function test_get_local_progress_uses_default_precision(): void {
+        $this->setOverallUniqueName('test_default_precision_'.$this->testId);
+        $this->setLocalProgress(33.33333);
+
+        // Without parameter, should use default precision (2)
+        $this->assertEquals(33.33, $this->getLocalProgress());
+
+        // With explicit null, should also use default
+        $this->assertEquals(33.33, $this->getLocalProgress(null));
+    }
+
+    public function test_get_overall_progress_uses_default_precision(): void {
+        $this->setOverallUniqueName('test_overall_default_precision_'.$this->testId);
+        $this->setLocalProgress(33.33333);
+
+        // Without parameter, should use default precision (2)
+        $this->assertEquals(33.33, $this->getOverallProgress());
+
+        // With explicit null, should also use default
+        $this->assertEquals(33.33, $this->getOverallProgress(null));
     }
 }

@@ -57,6 +57,16 @@ trait Progressable {
     protected ?string $customPrefixStorageKey = null;
 
     /**
+     * The default precision for progress values.
+     */
+    protected int $defaultPrecision = 2;
+
+    /**
+     * Custom precision for progress values.
+     */
+    protected ?int $customPrecision = null;
+
+    /**
      * Set the callback function for saving cache data.
      *
      * @return $this
@@ -81,9 +91,10 @@ trait Progressable {
     /**
      * Get the overall progress for the unique name.
      *
-     * @param  int  $precision  The precision of the overall progress
+     * @param  int|null  $precision  The precision of the overall progress (null uses configured default)
      */
-    public function getOverallProgress(int $precision = 2): float {
+    public function getOverallProgress(?int $precision = null): float {
+        $precision = $precision ?? $this->getPrecision();
         $progressData = $this->getOverallProgressData();
 
         $totalProgress = array_sum(array_column($progressData, 'progress'));
@@ -162,9 +173,11 @@ trait Progressable {
     /**
      * Get the progress value for this instance
      *
-     * @param  int  $precision  The precision of the local progress
+     * @param  int|null  $precision  The precision of the local progress (null uses configured default)
      */
-    public function getLocalProgress(int $precision = 2): float {
+    public function getLocalProgress(?int $precision = null): float {
+        $precision = $precision ?? $this->getPrecision();
+
         return round($this->progress, $precision, PHP_ROUND_HALF_ODD);
     }
 
@@ -173,6 +186,51 @@ trait Progressable {
      */
     public function resetLocalProgress(): static {
         return $this->setLocalProgress(0);
+    }
+
+    /**
+     * Increment the local progress by a given amount.
+     *
+     * @param  float  $amount  The amount to increment (can be negative to decrement)
+     *
+     * @throws UniqueNameNotSetException
+     */
+    public function incrementLocalProgress(float $amount = 1): static {
+        return $this->setLocalProgress($this->progress + $amount);
+    }
+
+    /**
+     * Check if the local progress is complete (100%).
+     */
+    public function isComplete(): bool {
+        return $this->progress >= 100;
+    }
+
+    /**
+     * Check if the overall progress is complete (100%).
+     */
+    public function isOverallComplete(): bool {
+        return $this->getOverallProgress(0) >= 100;
+    }
+
+    /**
+     * Remove this instance from the overall progress calculation.
+     *
+     *
+     * @throws UniqueNameNotSetException
+     */
+    public function removeLocalFromOverall(): static {
+        $progressData = $this->getOverallProgressData();
+        $localKey = $this->getLocalKey();
+
+        if (isset($progressData[$localKey])) {
+            unset($progressData[$localKey]);
+            $this->saveOverallProgressData($progressData);
+        }
+
+        $this->progress = 0;
+
+        return $this;
     }
 
     /**
@@ -287,6 +345,24 @@ trait Progressable {
      */
     public function setTTL(int $TTL): static {
         $this->customTTL = $TTL;
+
+        return $this;
+    }
+
+    /**
+     * Get the precision for progress values.
+     */
+    public function getPrecision(): int {
+        return $this->customPrecision ?? config('progressable.precision', $this->defaultPrecision);
+    }
+
+    /**
+     * Set the precision for progress values.
+     *
+     * @param  int  $precision  The number of decimal places
+     */
+    public function setPrecision(int $precision): static {
+        $this->customPrecision = max(0, $precision);
 
         return $this;
     }
