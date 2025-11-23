@@ -33,7 +33,10 @@
     }
   },
   "scripts": {
-    "test": "vendor/bin/phpunit tests/ProgressableTest.php --testdox"
+    "test": "vendor/bin/phpunit tests/ProgressableTest.php --testdox",
+    "lint": "vendor/bin/pint",
+    "lint:test": "vendor/bin/pint --test",
+    "analyse": "vendor/bin/phpstan analyse"
   },
   "config": {
     "sort-packages": true
@@ -41,7 +44,10 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require-dev": {
+    "larastan/larastan": "^3.8",
+    "laravel/pint": "^1.25",
     "orchestra/testbench": "^9.0",
+    "phpstan/phpstan": "^2.1",
     "phpunit/phpunit": "^12"
   }
 }

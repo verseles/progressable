@@ -1,0 +1,13 @@
+{
+    "preset": "laravel",
+    "rules": {
+        "simplified_null_return": true,
+        "braces_position": {
+            "functions_opening_brace": "same_line",
+            "classes_opening_brace": "same_line"
+        },
+        "align_multiline_comment": {
+            "comment_type": "phpdocs_only"
+        }
+    }
+}

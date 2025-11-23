@@ -36,13 +36,13 @@ This package provides a main trait: `Progressable`.
 
 ### With Laravel
 
-The `Progressable` trait can be used in any class that needs to track progress. It provides two main methods: `updateLocalProgress` and `getLocalProgress`.
+The `Progressable` trait can be used in any class that needs to track progress. It provides two main methods: `setLocalProgress` and `getLocalProgress`.
 
 "Local" refers to the progress of your class/model/etc, while "Overall" represents the sum of all Progressable classes using the same key name.
 
 ### Example
 ```php
-use Verseles\Progressable;
+use Verseles\Progressable\Progressable;
 
 class MyFirstTask
 {
@@ -65,7 +65,7 @@ class MyFirstTask
 ```
 
 ```php
-use Verseles\Progressable;
+use Verseles\Progressable\Progressable;
 
 class MySecondTask
 {
@@ -121,14 +121,14 @@ $obj1
   ->setCustomGetData($getCallback)
   ->setOverallUniqueName($overallUniqueName)
   ->resetOverallProgress()
-  ->updateLocalProgress(25);
+  ->setLocalProgress(25);
 
 $obj2 = new class { use Progressable; };
 $obj2
   ->setCustomSaveData($saveCallback)
   ->setCustomGetData($getCallback)
   ->setOverallUniqueName($overallUniqueName)
-  ->updateLocalProgress(75);
+  ->setLocalProgress(75);
 
 ```
 
