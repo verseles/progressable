@@ -2,7 +2,9 @@
 
 A Laravel [(not only)](#without-laravel) package to track and manage progress for different tasks or processes.
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/verseles/progressable/phpunit.yml?style=for-the-badge&label=CI)
+![CI](https://img.shields.io/github/actions/workflow/status/verseles/progressable/phpunit.yml?style=for-the-badge&label=CI)
+![Codecov](https://img.shields.io/codecov/c/github/verseles/progressable?style=for-the-badge)
+![PHP Version](https://img.shields.io/packagist/php-v/verseles/progressable?style=for-the-badge)
 
 ## Installation
 
@@ -86,6 +88,24 @@ class MyFirstTask
 | `isComplete()` | Check if local progress is 100% |
 | `isOverallComplete()` | Check if overall progress is 100% |
 
+#### Metadata & Status Messages
+
+| Method | Description |
+|--------|-------------|
+| `setStatusMessage(?string $message)` | Set a status message for this instance |
+| `getStatusMessage()` | Get the current status message |
+| `setMetadata(array $metadata)` | Set metadata array for this instance |
+| `getMetadata()` | Get all metadata |
+| `addMetadata(string $key, mixed $value)` | Add/update a single metadata value |
+| `getMetadataValue(string $key, mixed $default)` | Get a single metadata value |
+
+#### Event Callbacks
+
+| Method | Description |
+|--------|-------------|
+| `onProgressChange(callable $callback)` | Called when progress changes: `fn($new, $old, $instance)` |
+| `onComplete(callable $callback)` | Called when progress reaches 100%: `fn($instance)` |
+
 #### Configuration
 
 | Method | Description |
@@ -105,7 +125,7 @@ class MyFirstTask
 | `setCustomSaveData(callable $callback)` | Set custom save callback |
 | `setCustomGetData(callable $callback)` | Set custom get callback |
 
-### Increment Example
+### Example with Callbacks and Metadata
 
 ```php
 use Verseles\Progressable\Progressable;
@@ -116,16 +136,20 @@ class FileProcessor
 
     public function process(array $files)
     {
-        $this->setOverallUniqueName('file-processing')->resetOverallProgress();
+        $this->setOverallUniqueName('file-processing')
+            ->resetOverallProgress()
+            ->onProgressChange(fn($new, $old) => logger("Progress: {$old}% -> {$new}%"))
+            ->onComplete(fn() => logger("All files processed!"));
+
         $increment = 100 / count($files);
 
-        foreach ($files as $file) {
+        foreach ($files as $index => $file) {
+            $this->setStatusMessage("Processing: {$file}")
+                ->addMetadata('current_file', $file)
+                ->addMetadata('files_processed', $index + 1);
+
             $this->processFile($file);
             $this->incrementLocalProgress($increment);
-
-            if ($this->isComplete()) {
-                echo "Processing complete!";
-            }
         }
     }
 }

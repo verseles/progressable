@@ -29,6 +29,10 @@ class ProgressableTest extends TestCase {
         $this->localKey = null;
         $this->customPrefixStorageKey = null;
         $this->customPrecision = null;
+        $this->metadata = [];
+        $this->statusMessage = null;
+        $this->onProgressChange = null;
+        $this->onComplete = null;
 
         // Unset overallUniqueName to simulate fresh state
         unset($this->overallUniqueName);
@@ -330,5 +334,139 @@ class ProgressableTest extends TestCase {
 
         // With explicit null, should also use default
         $this->assertEquals(33.33, $this->getOverallProgress(null));
+    }
+
+    public function test_set_status_message(): void {
+        $this->setOverallUniqueName('test_status_message_'.$this->testId);
+        $this->setLocalProgress(50);
+
+        $this->setStatusMessage('Processing files...');
+        $this->assertEquals('Processing files...', $this->getStatusMessage());
+
+        // Check it's stored in progress data
+        $progressData = $this->getOverallProgressData();
+        $this->assertEquals('Processing files...', $progressData[$this->getLocalKey()]['message']);
+    }
+
+    public function test_set_metadata(): void {
+        $this->setOverallUniqueName('test_metadata_'.$this->testId);
+        $this->setLocalProgress(50);
+
+        $metadata = ['file' => 'test.txt', 'size' => 1024];
+        $this->setMetadata($metadata);
+
+        $this->assertEquals($metadata, $this->getMetadata());
+        $this->assertEquals('test.txt', $this->getMetadataValue('file'));
+        $this->assertEquals(1024, $this->getMetadataValue('size'));
+        $this->assertNull($this->getMetadataValue('nonexistent'));
+        $this->assertEquals('default', $this->getMetadataValue('nonexistent', 'default'));
+
+        // Check it's stored in progress data
+        $progressData = $this->getOverallProgressData();
+        $this->assertEquals($metadata, $progressData[$this->getLocalKey()]['metadata']);
+    }
+
+    public function test_add_metadata(): void {
+        $this->setOverallUniqueName('test_add_metadata_'.$this->testId);
+        $this->setLocalProgress(50);
+
+        $this->addMetadata('step', 1);
+        $this->addMetadata('total', 10);
+
+        $this->assertEquals(1, $this->getMetadataValue('step'));
+        $this->assertEquals(10, $this->getMetadataValue('total'));
+
+        // Update existing key
+        $this->addMetadata('step', 2);
+        $this->assertEquals(2, $this->getMetadataValue('step'));
+    }
+
+    public function test_on_progress_change_callback(): void {
+        $this->setOverallUniqueName('test_callback_change_'.$this->testId);
+
+        $callbackCalled = false;
+        $capturedNew = null;
+        $capturedOld = null;
+
+        $this->onProgressChange(function ($new, $old, $instance) use (&$callbackCalled, &$capturedNew, &$capturedOld) {
+            $callbackCalled = true;
+            $capturedNew = $new;
+            $capturedOld = $old;
+        });
+
+        $this->setLocalProgress(50);
+
+        $this->assertTrue($callbackCalled);
+        $this->assertEquals(50, $capturedNew);
+        $this->assertEquals(0, $capturedOld);
+    }
+
+    public function test_on_progress_change_not_called_when_same_value(): void {
+        $this->setOverallUniqueName('test_callback_same_'.$this->testId);
+        $this->setLocalProgress(50);
+
+        $callCount = 0;
+        $this->onProgressChange(function () use (&$callCount) {
+            $callCount++;
+        });
+
+        // Setting same value should not trigger callback
+        $this->setLocalProgress(50);
+        $this->assertEquals(0, $callCount);
+
+        // Setting different value should trigger callback
+        $this->setLocalProgress(51);
+        $this->assertEquals(1, $callCount);
+    }
+
+    public function test_on_complete_callback(): void {
+        $this->setOverallUniqueName('test_callback_complete_'.$this->testId);
+
+        $completeCalled = false;
+        $this->onComplete(function ($instance) use (&$completeCalled) {
+            $completeCalled = true;
+        });
+
+        $this->setLocalProgress(50);
+        $this->assertFalse($completeCalled);
+
+        $this->setLocalProgress(100);
+        $this->assertTrue($completeCalled);
+    }
+
+    public function test_on_complete_callback_only_fires_once(): void {
+        $this->setOverallUniqueName('test_callback_complete_once_'.$this->testId);
+
+        $callCount = 0;
+        $this->onComplete(function () use (&$callCount) {
+            $callCount++;
+        });
+
+        $this->setLocalProgress(100);
+        $this->assertEquals(1, $callCount);
+
+        // Setting to 100 again should not trigger (already at 100)
+        $this->setLocalProgress(100);
+        $this->assertEquals(1, $callCount);
+
+        // Going down and back up should trigger again
+        $this->setLocalProgress(50);
+        $this->setLocalProgress(100);
+        $this->assertEquals(2, $callCount);
+    }
+
+    public function test_metadata_and_message_stored_together(): void {
+        $this->setOverallUniqueName('test_metadata_message_'.$this->testId);
+
+        $this->setStatusMessage('Processing...');
+        $this->setMetadata(['step' => 1]);
+        $this->setLocalProgress(50);
+
+        $progressData = $this->getOverallProgressData();
+        $localData = $progressData[$this->getLocalKey()];
+
+        $this->assertEquals(50, $localData['progress']);
+        $this->assertEquals('Processing...', $localData['message']);
+        $this->assertEquals(['step' => 1], $localData['metadata']);
     }
 }

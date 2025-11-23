@@ -67,6 +67,30 @@ trait Progressable {
     protected ?int $customPrecision = null;
 
     /**
+     * Metadata associated with this progress instance.
+     */
+    protected array $metadata = [];
+
+    /**
+     * Status message for this progress instance.
+     */
+    protected ?string $statusMessage = null;
+
+    /**
+     * Callback to be called when progress changes.
+     *
+     * @var callable|null
+     */
+    protected mixed $onProgressChange = null;
+
+    /**
+     * Callback to be called when progress completes.
+     *
+     * @var callable|null
+     */
+    protected mixed $onComplete = null;
+
+    /**
      * Set the callback function for saving cache data.
      *
      * @return $this
@@ -241,9 +265,22 @@ trait Progressable {
      * @throws UniqueNameNotSetException
      */
     public function setLocalProgress(float $progress): static {
+        $oldProgress = $this->progress;
         $this->progress = max(0, min(100, $progress));
 
-        return $this->updateLocalProgressData($this->progress);
+        $this->updateLocalProgressData($this->progress);
+
+        // Fire progress change callback
+        if ($this->onProgressChange !== null && $oldProgress !== $this->progress) {
+            call_user_func($this->onProgressChange, $this->progress, $oldProgress, $this);
+        }
+
+        // Fire complete callback
+        if ($this->onComplete !== null && $this->progress >= 100 && $oldProgress < 100) {
+            call_user_func($this->onComplete, $this);
+        }
+
+        return $this;
     }
 
     /**
@@ -252,9 +289,19 @@ trait Progressable {
     protected function updateLocalProgressData(float $progress): static {
         $progressData = $this->getOverallProgressData();
 
-        $progressData[$this->getLocalKey()] = [
+        $localData = [
             'progress' => $progress,
         ];
+
+        if ($this->statusMessage !== null) {
+            $localData['message'] = $this->statusMessage;
+        }
+
+        if (! empty($this->metadata)) {
+            $localData['metadata'] = $this->metadata;
+        }
+
+        $progressData[$this->getLocalKey()] = $localData;
 
         return $this->saveOverallProgressData($progressData);
     }
@@ -363,6 +410,95 @@ trait Progressable {
      */
     public function setPrecision(int $precision): static {
         $this->customPrecision = max(0, $precision);
+
+        return $this;
+    }
+
+    /**
+     * Set the status message for this progress instance.
+     */
+    public function setStatusMessage(?string $message): static {
+        $this->statusMessage = $message;
+
+        // Update storage with new message if we have a unique name
+        if (isset($this->overallUniqueName)) {
+            $this->updateLocalProgressData($this->progress);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get the status message for this progress instance.
+     */
+    public function getStatusMessage(): ?string {
+        return $this->statusMessage;
+    }
+
+    /**
+     * Set metadata for this progress instance.
+     *
+     * @param  array<string, mixed>  $metadata
+     */
+    public function setMetadata(array $metadata): static {
+        $this->metadata = $metadata;
+
+        // Update storage with new metadata if we have a unique name
+        if (isset($this->overallUniqueName)) {
+            $this->updateLocalProgressData($this->progress);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get metadata for this progress instance.
+     *
+     * @return array<string, mixed>
+     */
+    public function getMetadata(): array {
+        return $this->metadata;
+    }
+
+    /**
+     * Add or update a single metadata value.
+     */
+    public function addMetadata(string $key, mixed $value): static {
+        $this->metadata[$key] = $value;
+
+        // Update storage with new metadata if we have a unique name
+        if (isset($this->overallUniqueName)) {
+            $this->updateLocalProgressData($this->progress);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get a single metadata value.
+     */
+    public function getMetadataValue(string $key, mixed $default = null): mixed {
+        return $this->metadata[$key] ?? $default;
+    }
+
+    /**
+     * Set a callback to be called when progress changes.
+     *
+     * The callback receives: (float $newProgress, float $oldProgress, static $instance)
+     */
+    public function onProgressChange(callable $callback): static {
+        $this->onProgressChange = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Set a callback to be called when progress reaches 100%.
+     *
+     * The callback receives: (static $instance)
+     */
+    public function onComplete(callable $callback): static {
+        $this->onComplete = $callback;
 
         return $this;
     }
