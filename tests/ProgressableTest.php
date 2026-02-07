@@ -469,4 +469,20 @@ class ProgressableTest extends TestCase {
         $this->assertEquals('Processing...', $localData['message']);
         $this->assertEquals(['step' => 1], $localData['metadata']);
     }
+
+    public function test_merge_metadata(): void {
+        $this->setOverallUniqueName('test_merge_metadata_'.$this->testId);
+        $this->setMetadata(['key1' => 'value1']);
+
+        $this->mergeMetadata(['key2' => 'value2', 'key1' => 'new_value1']);
+
+        $this->assertEquals('new_value1', $this->getMetadataValue('key1'));
+        $this->assertEquals('value2', $this->getMetadataValue('key2'));
+
+        // Verify storage
+        $progressData = $this->getOverallProgressData();
+        $storedMetadata = $progressData[$this->getLocalKey()]['metadata'];
+        $this->assertEquals('new_value1', $storedMetadata['key1']);
+        $this->assertEquals('value2', $storedMetadata['key2']);
+    }
 }
