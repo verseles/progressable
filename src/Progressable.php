@@ -429,6 +429,22 @@ trait Progressable {
     }
 
     /**
+     * Merge metadata for this progress instance.
+     *
+     * @param  array<string, mixed>  $metadata
+     */
+    public function mergeMetadata(array $metadata): static {
+        $this->metadata = array_merge($this->metadata, $metadata);
+
+        // Update storage with new metadata if we have a unique name
+        if (isset($this->overallUniqueName)) {
+            $this->updateLocalProgressData($this->progress);
+        }
+
+        return $this;
+    }
+
+    /**
      * Get the status message for this progress instance.
      */
     public function getStatusMessage(): ?string {
