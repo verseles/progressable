@@ -2,6 +2,7 @@
 
 namespace Verseles\Progressable;
 
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Verseles\Progressable\Exceptions\UniqueNameAlreadySetException;
 use Verseles\Progressable\Exceptions\UniqueNameNotSetException;
@@ -287,6 +288,35 @@ trait Progressable {
      * Update the progress data in storage.
      */
     protected function updateLocalProgressData(float $progress): static {
+        if ($this->customSaveData !== null || $this->customGetData !== null) {
+            return $this->performUpdateLocalProgressData($progress);
+        }
+
+        try {
+            $lock = Cache::lock($this->getStorageKeyName().'_lock', 5);
+        } catch (\Throwable) {
+            return $this->performUpdateLocalProgressData($progress);
+        }
+
+        try {
+            $lock->block(5);
+
+            try {
+                $this->performUpdateLocalProgressData($progress);
+            } finally {
+                $lock->release();
+            }
+        } catch (LockTimeoutException) {
+            // If the lock cannot be acquired, we skip the update to prevent data corruption.
+        }
+
+        return $this;
+    }
+
+    /**
+     * Perform the actual update of the progress data.
+     */
+    protected function performUpdateLocalProgressData(float $progress): static {
         $progressData = $this->getOverallProgressData();
 
         $localData = [
