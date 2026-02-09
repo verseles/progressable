@@ -91,6 +91,41 @@ trait Progressable {
     protected mixed $onComplete = null;
 
     /**
+     * Indicates if the process is currently locked.
+     */
+    protected bool $isLocked = false;
+
+    /**
+     * Execute a callback within a cache lock.
+     */
+    protected function withLock(callable $callback): mixed
+    {
+        if ($this->customSaveData !== null || $this->customGetData !== null) {
+            return $callback();
+        }
+
+        if ($this->isLocked) {
+            return $callback();
+        }
+
+        $key = $this->getStorageKeyName().'_lock';
+
+        try {
+            return Cache::lock($key, 5)->block(5, function () use ($callback) {
+                $this->isLocked = true;
+
+                try {
+                    return $callback();
+                } finally {
+                    $this->isLocked = false;
+                }
+            });
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
+
+    /**
      * Set the callback function for saving cache data.
      *
      * @return $this
@@ -244,17 +279,19 @@ trait Progressable {
      * @throws UniqueNameNotSetException
      */
     public function removeLocalFromOverall(): static {
-        $progressData = $this->getOverallProgressData();
-        $localKey = $this->getLocalKey();
+        return $this->withLock(function () {
+            $progressData = $this->getOverallProgressData();
+            $localKey = $this->getLocalKey();
 
-        if (isset($progressData[$localKey])) {
-            unset($progressData[$localKey]);
-            $this->saveOverallProgressData($progressData);
-        }
+            if (isset($progressData[$localKey])) {
+                unset($progressData[$localKey]);
+                $this->saveOverallProgressData($progressData);
+            }
 
-        $this->progress = 0;
+            $this->progress = 0;
 
-        return $this;
+            return $this;
+        });
     }
 
     /**
@@ -287,23 +324,25 @@ trait Progressable {
      * Update the progress data in storage.
      */
     protected function updateLocalProgressData(float $progress): static {
-        $progressData = $this->getOverallProgressData();
+        return $this->withLock(function () use ($progress) {
+            $progressData = $this->getOverallProgressData();
 
-        $localData = [
-            'progress' => $progress,
-        ];
+            $localData = [
+                'progress' => $progress,
+            ];
 
-        if ($this->statusMessage !== null) {
-            $localData['message'] = $this->statusMessage;
-        }
+            if ($this->statusMessage !== null) {
+                $localData['message'] = $this->statusMessage;
+            }
 
-        if (! empty($this->metadata)) {
-            $localData['metadata'] = $this->metadata;
-        }
+            if (! empty($this->metadata)) {
+                $localData['metadata'] = $this->metadata;
+            }
 
-        $progressData[$this->getLocalKey()] = $localData;
+            $progressData[$this->getLocalKey()] = $localData;
 
-        return $this->saveOverallProgressData($progressData);
+            return $this->saveOverallProgressData($progressData);
+        });
     }
 
     /**
@@ -319,21 +358,23 @@ trait Progressable {
      * @param  string  $name  The new local key name
      */
     public function setLocalKey(string $name): static {
-        $currentKey = $this->getLocalKey();
-        $overallProgressData = $this->getOverallProgressData();
+        return $this->withLock(function () use ($name) {
+            $currentKey = $this->getLocalKey();
+            $overallProgressData = $this->getOverallProgressData();
 
-        if (isset($overallProgressData[$currentKey])) {
-            // Rename the local key preserving the data
-            $overallProgressData[$name] = $overallProgressData[$currentKey];
-            unset($overallProgressData[$currentKey]);
-            $this->saveOverallProgressData($overallProgressData);
-        }
+            if (isset($overallProgressData[$currentKey])) {
+                // Rename the local key preserving the data
+                $overallProgressData[$name] = $overallProgressData[$currentKey];
+                unset($overallProgressData[$currentKey]);
+                $this->saveOverallProgressData($overallProgressData);
+            }
 
-        $this->localKey = $name;
+            $this->localKey = $name;
 
-        $this->makeSureLocalIsPartOfTheCalc();
+            $this->makeSureLocalIsPartOfTheCalc();
 
-        return $this;
+            return $this;
+        });
     }
 
     /**
