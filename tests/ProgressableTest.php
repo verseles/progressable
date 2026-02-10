@@ -3,6 +3,7 @@
 namespace Verseles\Progressable\Tests;
 
 use Orchestra\Testbench\TestCase;
+use Verseles\Progressable\Exceptions\TotalStepsNotSetException;
 use Verseles\Progressable\Exceptions\UniqueNameAlreadySetException;
 use Verseles\Progressable\Exceptions\UniqueNameNotSetException;
 use Verseles\Progressable\Progressable;
@@ -484,5 +485,45 @@ class ProgressableTest extends TestCase {
         $storedMetadata = $progressData[$this->getLocalKey()]['metadata'];
         $this->assertEquals('new_value1', $storedMetadata['key1']);
         $this->assertEquals('value2', $storedMetadata['key2']);
+    }
+
+    public function test_set_total_steps(): void {
+        $this->setTotalSteps(10);
+        $this->assertEquals(10, $this->getTotalSteps());
+        $this->assertEquals(0, $this->getCurrentStep());
+    }
+
+    public function test_advance(): void {
+        $this->setOverallUniqueName('test_advance_'.$this->testId);
+        $this->setTotalSteps(10);
+
+        $this->advance();
+        $this->assertEquals(1, $this->getCurrentStep());
+        $this->assertEquals(10, $this->getLocalProgress());
+
+        $this->advance(2);
+        $this->assertEquals(3, $this->getCurrentStep());
+        $this->assertEquals(30, $this->getLocalProgress());
+    }
+
+    public function test_advance_without_total_steps_throws_exception(): void {
+        $this->setOverallUniqueName('test_advance_exception_'.$this->testId);
+        $this->expectException(TotalStepsNotSetException::class);
+        $this->advance();
+    }
+
+    public function test_step_info_in_progress_data(): void {
+        $this->setOverallUniqueName('test_step_info_'.$this->testId);
+        $this->setTotalSteps(5);
+        $this->advance(1);
+
+        $progressData = $this->getOverallProgressData();
+        $localData = $progressData[$this->getLocalKey()];
+
+        $this->assertArrayHasKey('current_step', $localData);
+        $this->assertArrayHasKey('total_steps', $localData);
+        $this->assertEquals(1, $localData['current_step']);
+        $this->assertEquals(5, $localData['total_steps']);
+        $this->assertEquals(20, $localData['progress']);
     }
 }

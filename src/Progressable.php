@@ -3,6 +3,7 @@
 namespace Verseles\Progressable;
 
 use Illuminate\Support\Facades\Cache;
+use Verseles\Progressable\Exceptions\TotalStepsNotSetException;
 use Verseles\Progressable\Exceptions\UniqueNameAlreadySetException;
 use Verseles\Progressable\Exceptions\UniqueNameNotSetException;
 
@@ -16,6 +17,16 @@ trait Progressable {
      * The progress value for this instance.
      */
     protected float $progress = 0;
+
+    /**
+     * The total number of steps for the progress.
+     */
+    protected ?int $totalSteps = null;
+
+    /**
+     * The current step of the progress.
+     */
+    protected int $currentStep = 0;
 
     /**
      * The callback function for saving cache data.
@@ -301,6 +312,11 @@ trait Progressable {
             $localData['metadata'] = $this->metadata;
         }
 
+        if ($this->totalSteps !== null) {
+            $localData['current_step'] = $this->currentStep;
+            $localData['total_steps'] = $this->totalSteps;
+        }
+
         $progressData[$this->getLocalKey()] = $localData;
 
         return $this->saveOverallProgressData($progressData);
@@ -517,5 +533,49 @@ trait Progressable {
         $this->onComplete = $callback;
 
         return $this;
+    }
+
+    /**
+     * Set the total number of steps for the progress.
+     *
+     * @param  int  $steps  The total number of steps
+     */
+    public function setTotalSteps(int $steps): static {
+        $this->totalSteps = $steps;
+        $this->currentStep = 0;
+
+        return $this;
+    }
+
+    /**
+     * Advance the progress by a given number of steps.
+     *
+     * @param  int  $step  The number of steps to advance
+     *
+     * @throws TotalStepsNotSetException
+     */
+    public function advance(int $step = 1): static {
+        if ($this->totalSteps === null) {
+            throw new TotalStepsNotSetException;
+        }
+
+        $this->currentStep += $step;
+        $progress = ($this->currentStep / $this->totalSteps) * 100;
+
+        return $this->setLocalProgress($progress);
+    }
+
+    /**
+     * Get the total number of steps.
+     */
+    public function getTotalSteps(): ?int {
+        return $this->totalSteps;
+    }
+
+    /**
+     * Get the current step.
+     */
+    public function getCurrentStep(): int {
+        return $this->currentStep;
     }
 }
