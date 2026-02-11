@@ -18,6 +18,16 @@ trait Progressable {
     protected float $progress = 0;
 
     /**
+     * The total number of steps.
+     */
+    protected ?int $totalSteps = null;
+
+    /**
+     * The current step.
+     */
+    protected int $currentStep = 0;
+
+    /**
      * The callback function for saving cache data.
      *
      * @var callable|null
@@ -209,7 +219,63 @@ trait Progressable {
      * @throws UniqueNameNotSetException
      */
     public function resetLocalProgress(): static {
+        $this->currentStep = 0;
+
         return $this->setLocalProgress(0);
+    }
+
+    /**
+     * Set the total number of steps.
+     */
+    public function setTotalSteps(int $steps): static {
+        $this->totalSteps = $steps;
+
+        return $this;
+    }
+
+    /**
+     * Get the total number of steps.
+     */
+    public function getTotalSteps(): ?int {
+        return $this->totalSteps;
+    }
+
+    /**
+     * Set the current step and update progress.
+     */
+    public function setStep(int $step): static {
+        if ($this->totalSteps === null) {
+            throw new \LogicException('Total steps must be set before setting step.');
+        }
+
+        $this->currentStep = $step;
+
+        if ($this->totalSteps > 0) {
+            $progress = ($this->currentStep / $this->totalSteps) * 100;
+            $this->setLocalProgress($progress);
+        } else {
+            $this->setLocalProgress(100);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get the current step.
+     */
+    public function getCurrentStep(): int {
+        return $this->currentStep;
+    }
+
+    /**
+     * Increment the current step by a given amount.
+     */
+    public function incrementStep(int $amount = 1): static {
+        if ($this->totalSteps === null) {
+            throw new \LogicException('Total steps must be set before incrementing step.');
+        }
+
+        return $this->setStep($this->currentStep + $amount);
     }
 
     /**

@@ -10,7 +10,7 @@
     }
   ],
   "require": {
-    "php": ">=8.4",
+    "php": "^8.2",
     "illuminate/support": "^v11|^v12",
     "illuminate/cache": "^11|^v12",
     "illuminate/contracts": "^11|^v12"
@@ -33,7 +33,7 @@
     }
   },
   "scripts": {
-    "test": "vendor/bin/phpunit tests/ProgressableTest.php --testdox",
+    "test": "vendor/bin/phpunit tests --testdox",
     "lint": "vendor/bin/pint",
     "lint:test": "vendor/bin/pint --test",
     "analyse": "vendor/bin/phpstan analyse"
