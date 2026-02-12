@@ -485,4 +485,61 @@ class ProgressableTest extends TestCase {
         $this->assertEquals('new_value1', $storedMetadata['key1']);
         $this->assertEquals('value2', $storedMetadata['key2']);
     }
+
+    public function test_set_total_steps(): void {
+        $this->setTotalSteps(10);
+        $this->assertEquals(10, $this->getTotalSteps());
+    }
+
+    public function test_set_current_step_updates_progress(): void {
+        $this->setOverallUniqueName('test_step_progress_'.$this->testId);
+        $this->setTotalSteps(10);
+        $this->setCurrentStep(5);
+
+        $this->assertEquals(5, $this->getCurrentStep());
+        $this->assertEquals(50, $this->getLocalProgress());
+    }
+
+    public function test_increment_step(): void {
+        $this->setOverallUniqueName('test_increment_step_'.$this->testId);
+        $this->setTotalSteps(10);
+
+        $this->incrementStep();
+        $this->assertEquals(1, $this->getCurrentStep());
+        $this->assertEquals(10, $this->getLocalProgress());
+
+        $this->incrementStep(4);
+        $this->assertEquals(5, $this->getCurrentStep());
+        $this->assertEquals(50, $this->getLocalProgress());
+    }
+
+    public function test_step_data_is_stored(): void {
+        $this->setOverallUniqueName('test_step_data_'.$this->testId);
+        $this->setTotalSteps(10);
+        $this->setCurrentStep(1);
+
+        $progressData = $this->getOverallProgressData();
+        $localData = $progressData[$this->getLocalKey()];
+
+        $this->assertArrayHasKey('steps', $localData);
+        $this->assertEquals(1, $localData['steps']['current']);
+        $this->assertEquals(10, $localData['steps']['total']);
+    }
+
+    public function test_zero_total_steps(): void {
+        $this->setOverallUniqueName('test_zero_steps_'.$this->testId);
+        $this->setTotalSteps(0);
+        $this->setLocalProgress(50);
+
+        // Should not update progress (division by zero protection)
+        $this->setCurrentStep(5);
+
+        // Progress should remain 50
+        $this->assertEquals(50, $this->getLocalProgress());
+
+        // Steps should not be stored if 0
+        $progressData = $this->getOverallProgressData();
+        $localData = $progressData[$this->getLocalKey()];
+        $this->assertArrayNotHasKey('steps', $localData);
+    }
 }

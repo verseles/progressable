@@ -18,6 +18,16 @@ trait Progressable {
     protected float $progress = 0;
 
     /**
+     * The total number of steps.
+     */
+    protected int $totalSteps = 0;
+
+    /**
+     * The current step.
+     */
+    protected int $currentStep = 0;
+
+    /**
      * The callback function for saving cache data.
      *
      * @var callable|null
@@ -224,6 +234,49 @@ trait Progressable {
     }
 
     /**
+     * Set the total number of steps.
+     */
+    public function setTotalSteps(int $steps): static {
+        $this->totalSteps = max(0, $steps);
+
+        return $this;
+    }
+
+    /**
+     * Get the total number of steps.
+     */
+    public function getTotalSteps(): int {
+        return $this->totalSteps;
+    }
+
+    /**
+     * Set the current step.
+     */
+    public function setCurrentStep(int $step): static {
+        $this->currentStep = max(0, $step);
+
+        if ($this->totalSteps > 0) {
+            $this->setLocalProgress(($this->currentStep / $this->totalSteps) * 100);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get the current step.
+     */
+    public function getCurrentStep(): int {
+        return $this->currentStep;
+    }
+
+    /**
+     * Increment the current step.
+     */
+    public function incrementStep(int $amount = 1): static {
+        return $this->setCurrentStep($this->currentStep + $amount);
+    }
+
+    /**
      * Check if the local progress is complete (100%).
      */
     public function isComplete(): bool {
@@ -299,6 +352,13 @@ trait Progressable {
 
         if (! empty($this->metadata)) {
             $localData['metadata'] = $this->metadata;
+        }
+
+        if ($this->totalSteps > 0) {
+            $localData['steps'] = [
+                'current' => $this->currentStep,
+                'total' => $this->totalSteps,
+            ];
         }
 
         $progressData[$this->getLocalKey()] = $localData;
