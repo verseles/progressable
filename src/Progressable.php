@@ -18,6 +18,16 @@ trait Progressable {
     protected float $progress = 0;
 
     /**
+     * The total number of steps for the progress.
+     */
+    protected ?int $totalSteps = null;
+
+    /**
+     * The current step of the progress.
+     */
+    protected int $currentStep = 0;
+
+    /**
      * The callback function for saving cache data.
      *
      * @var callable|null
@@ -110,6 +120,75 @@ trait Progressable {
         $this->customGetData = $callback;
 
         return $this;
+    }
+
+    /**
+     * Set the total number of steps for the progress.
+     *
+     * @param int $steps The total number of steps.
+     * @return $this
+     * @throws \InvalidArgumentException If steps is not greater than 0.
+     */
+    public function setTotalSteps(int $steps): static {
+        if ($steps <= 0) {
+            throw new \InvalidArgumentException("Total steps must be greater than 0");
+        }
+        $this->totalSteps = $steps;
+        return $this;
+    }
+
+    /**
+     * Get the total number of steps.
+     *
+     * @return int|null
+     */
+    public function getTotalSteps(): ?int {
+        return $this->totalSteps;
+    }
+
+    /**
+     * Increment the current step by a given amount.
+     *
+     * @param int $amount The amount to increment.
+     * @return $this
+     * @throws \LogicException If total steps are not set.
+     */
+    public function incrementStep(int $amount = 1): static {
+        if ($this->totalSteps === null) {
+            throw new \LogicException("Total steps not set. Call setTotalSteps() first.");
+        }
+
+        $this->currentStep += $amount;
+        $progress = ($this->currentStep / $this->totalSteps) * 100;
+
+        return $this->setLocalProgress($progress);
+    }
+
+    /**
+     * Set the current step.
+     *
+     * @param int $step The current step.
+     * @return $this
+     * @throws \LogicException If total steps are not set.
+     */
+    public function setCurrentStep(int $step): static {
+        if ($this->totalSteps === null) {
+            throw new \LogicException("Total steps not set. Call setTotalSteps() first.");
+        }
+
+        $this->currentStep = $step;
+        $progress = ($this->currentStep / $this->totalSteps) * 100;
+
+        return $this->setLocalProgress($progress);
+    }
+
+    /**
+     * Get the current step.
+     *
+     * @return int
+     */
+    public function getCurrentStep(): int {
+        return $this->currentStep;
     }
 
     /**

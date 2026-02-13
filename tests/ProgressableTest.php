@@ -485,4 +485,49 @@ class ProgressableTest extends TestCase {
         $this->assertEquals('new_value1', $storedMetadata['key1']);
         $this->assertEquals('value2', $storedMetadata['key2']);
     }
+
+    public function test_set_total_steps(): void {
+        $this->setOverallUniqueName('test_steps_'.$this->testId);
+        $this->setTotalSteps(10);
+
+        $this->assertEquals(10, $this->getTotalSteps());
+        $this->assertEquals(0, $this->getCurrentStep());
+    }
+
+    public function test_increment_step(): void {
+        $this->setOverallUniqueName('test_increment_step_'.$this->testId);
+        $this->setTotalSteps(10);
+
+        $this->incrementStep();
+        $this->assertEquals(1, $this->getCurrentStep());
+        $this->assertEquals(10.0, $this->getLocalProgress());
+
+        $this->incrementStep(4);
+        $this->assertEquals(5, $this->getCurrentStep());
+        $this->assertEquals(50.0, $this->getLocalProgress());
+    }
+
+    public function test_set_current_step(): void {
+        $this->setOverallUniqueName('test_set_current_step_'.$this->testId);
+        $this->setTotalSteps(100);
+
+        $this->setCurrentStep(25);
+        $this->assertEquals(25, $this->getCurrentStep());
+        $this->assertEquals(25.0, $this->getLocalProgress());
+    }
+
+    public function test_increment_step_without_total_steps_throws_exception(): void {
+        $this->expectException(\LogicException::class);
+        $this->incrementStep();
+    }
+
+    public function test_set_current_step_without_total_steps_throws_exception(): void {
+        $this->expectException(\LogicException::class);
+        $this->setCurrentStep(5);
+    }
+
+    public function test_set_total_steps_invalid_value(): void {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->setTotalSteps(0);
+    }
 }
