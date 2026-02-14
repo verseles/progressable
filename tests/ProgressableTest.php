@@ -485,4 +485,61 @@ class ProgressableTest extends TestCase {
         $this->assertEquals('new_value1', $storedMetadata['key1']);
         $this->assertEquals('value2', $storedMetadata['key2']);
     }
+
+    public function test_set_total_steps(): void {
+        $this->setOverallUniqueName('test_steps_'.$this->testId);
+        $this->setTotalSteps(10);
+        $this->assertEquals(10, $this->getTotalSteps());
+    }
+
+    public function test_set_total_steps_exception(): void {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->setTotalSteps(0);
+    }
+
+    public function test_increment_step(): void {
+        $this->setOverallUniqueName('test_inc_step_'.$this->testId);
+        $this->setTotalSteps(10);
+
+        $this->incrementStep();
+        $this->assertEquals(1, $this->getCurrentStep());
+        $this->assertEquals(10, $this->getLocalProgress());
+
+        $this->incrementStep(2);
+        $this->assertEquals(3, $this->getCurrentStep());
+        $this->assertEquals(30, $this->getLocalProgress());
+    }
+
+    public function test_set_step(): void {
+        $this->setOverallUniqueName('test_set_step_'.$this->testId);
+        $this->setTotalSteps(10);
+
+        $this->setStep(5);
+        $this->assertEquals(5, $this->getCurrentStep());
+        $this->assertEquals(50, $this->getLocalProgress());
+    }
+
+    public function test_increment_step_without_total_steps(): void {
+        $this->setOverallUniqueName('test_no_total_'.$this->testId);
+        $this->expectException(\LogicException::class);
+        $this->incrementStep();
+    }
+
+    public function test_step_progress_calculation(): void {
+        $this->setOverallUniqueName('test_step_calc_'.$this->testId);
+        $this->setTotalSteps(3);
+
+        $this->incrementStep();
+        // 1/3 = 33.333...
+        $this->assertEquals(33.33, $this->getLocalProgress(2));
+    }
+
+    public function test_step_exceeds_total(): void {
+        $this->setOverallUniqueName('test_step_exceed_'.$this->testId);
+        $this->setTotalSteps(10);
+
+        $this->setStep(11);
+        $this->assertEquals(11, $this->getCurrentStep());
+        $this->assertEquals(100, $this->getLocalProgress());
+    }
 }

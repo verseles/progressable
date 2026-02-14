@@ -18,6 +18,16 @@ trait Progressable {
     protected float $progress = 0;
 
     /**
+     * Total steps for the process.
+     */
+    protected ?int $totalSteps = null;
+
+    /**
+     * Current step of the process.
+     */
+    protected int $currentStep = 0;
+
+    /**
      * The callback function for saving cache data.
      *
      * @var callable|null
@@ -89,6 +99,64 @@ trait Progressable {
      * @var callable|null
      */
     protected mixed $onComplete = null;
+
+    /**
+     * Set the total number of steps.
+     *
+     * @return $this
+     */
+    public function setTotalSteps(int $steps): static {
+        if ($steps <= 0) {
+            throw new \InvalidArgumentException('Total steps must be greater than 0');
+        }
+        $this->totalSteps = $steps;
+
+        return $this;
+    }
+
+    /**
+     * Increment the current step.
+     *
+     * @return $this
+     */
+    public function incrementStep(int $amount = 1): static {
+        if ($this->totalSteps === null) {
+            throw new \LogicException('Total steps not set. Call setTotalSteps() first.');
+        }
+        $this->currentStep += $amount;
+        $progress = ($this->currentStep / $this->totalSteps) * 100;
+
+        return $this->setLocalProgress($progress);
+    }
+
+    /**
+     * Set the current step.
+     *
+     * @return $this
+     */
+    public function setStep(int $step): static {
+        if ($this->totalSteps === null) {
+            throw new \LogicException('Total steps not set. Call setTotalSteps() first.');
+        }
+        $this->currentStep = $step;
+        $progress = ($this->currentStep / $this->totalSteps) * 100;
+
+        return $this->setLocalProgress($progress);
+    }
+
+    /**
+     * Get the total number of steps.
+     */
+    public function getTotalSteps(): ?int {
+        return $this->totalSteps;
+    }
+
+    /**
+     * Get the current step.
+     */
+    public function getCurrentStep(): int {
+        return $this->currentStep;
+    }
 
     /**
      * Set the callback function for saving cache data.
