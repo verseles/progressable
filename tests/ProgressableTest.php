@@ -485,4 +485,72 @@ class ProgressableTest extends TestCase {
         $this->assertEquals('new_value1', $storedMetadata['key1']);
         $this->assertEquals('value2', $storedMetadata['key2']);
     }
+
+    public function test_set_total_steps(): void {
+        $this->setOverallUniqueName('test_total_steps_'.$this->testId);
+        $this->setTotalSteps(10);
+
+        $this->assertEquals(10, $this->getTotalSteps());
+    }
+
+    public function test_step_based_progress(): void {
+        $this->setOverallUniqueName('test_step_progress_'.$this->testId);
+        $this->setTotalSteps(10);
+
+        $this->setStep(5);
+        $this->assertEquals(5, $this->getStep());
+        $this->assertEquals(50, $this->getLocalProgress());
+
+        $this->setStep(2);
+        $this->assertEquals(2, $this->getStep());
+        $this->assertEquals(20, $this->getLocalProgress());
+    }
+
+    public function test_increment_step(): void {
+        $this->setOverallUniqueName('test_increment_step_'.$this->testId);
+        $this->setTotalSteps(10);
+        $this->setStep(1);
+
+        $this->incrementStep();
+        $this->assertEquals(2, $this->getStep());
+        $this->assertEquals(20, $this->getLocalProgress());
+
+        $this->incrementStep(3);
+        $this->assertEquals(5, $this->getStep());
+        $this->assertEquals(50, $this->getLocalProgress());
+    }
+
+    public function test_sync_between_progress_and_steps(): void {
+        $this->setOverallUniqueName('test_sync_steps_'.$this->testId);
+        $this->setTotalSteps(100);
+
+        $this->setLocalProgress(50);
+        $this->assertEquals(50, $this->getStep());
+
+        $this->setLocalProgress(25.5);
+        $this->assertEquals(26, $this->getStep()); // round(25.5) = 26
+    }
+
+    public function test_step_data_in_storage(): void {
+        $this->setOverallUniqueName('test_storage_steps_'.$this->testId);
+        $this->setTotalSteps(10);
+        $this->setStep(5);
+
+        $progressData = $this->getOverallProgressData();
+        $localData = $progressData[$this->getLocalKey()];
+
+        $this->assertArrayHasKey('total_steps', $localData);
+        $this->assertEquals(10, $localData['total_steps']);
+
+        $this->assertArrayHasKey('current_step', $localData);
+        $this->assertEquals(5, $localData['current_step']);
+    }
+
+    public function test_set_step_without_total_steps(): void {
+        $this->setOverallUniqueName('test_step_without_total_'.$this->testId);
+        $this->setStep(5);
+
+        $this->assertEquals(5, $this->getStep());
+        $this->assertEquals(0, $this->getLocalProgress());
+    }
 }

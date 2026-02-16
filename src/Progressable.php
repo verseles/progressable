@@ -18,6 +18,16 @@ trait Progressable {
     protected float $progress = 0;
 
     /**
+     * The total steps for the progress.
+     */
+    protected ?int $totalSteps = null;
+
+    /**
+     * The current step of the progress.
+     */
+    protected ?int $currentStep = null;
+
+    /**
      * The callback function for saving cache data.
      *
      * @var callable|null
@@ -268,6 +278,10 @@ trait Progressable {
         $oldProgress = $this->progress;
         $this->progress = max(0, min(100, $progress));
 
+        if ($this->totalSteps !== null && $this->totalSteps > 0) {
+            $this->currentStep = (int) round(($this->progress / 100) * $this->totalSteps);
+        }
+
         $this->updateLocalProgressData($this->progress);
 
         // Fire progress change callback
@@ -295,6 +309,14 @@ trait Progressable {
 
         if ($this->statusMessage !== null) {
             $localData['message'] = $this->statusMessage;
+        }
+
+        if ($this->totalSteps !== null) {
+            $localData['total_steps'] = $this->totalSteps;
+        }
+
+        if ($this->currentStep !== null) {
+            $localData['current_step'] = $this->currentStep;
         }
 
         if (! empty($this->metadata)) {
@@ -517,5 +539,61 @@ trait Progressable {
         $this->onComplete = $callback;
 
         return $this;
+    }
+
+    /**
+     * Set the total number of steps.
+     *
+     * @param  int  $totalSteps  The total number of steps.
+     * @return $this
+     */
+    public function setTotalSteps(int $totalSteps): static {
+        $this->totalSteps = $totalSteps;
+
+        return $this;
+    }
+
+    /**
+     * Get the total number of steps.
+     */
+    public function getTotalSteps(): ?int {
+        return $this->totalSteps;
+    }
+
+    /**
+     * Set the current step.
+     *
+     * @param  int  $step  The current step.
+     * @return $this
+     */
+    public function setStep(int $step): static {
+        $this->currentStep = $step;
+
+        if ($this->totalSteps !== null && $this->totalSteps > 0) {
+            $progress = ($this->currentStep / $this->totalSteps) * 100;
+
+            return $this->setLocalProgress($progress);
+        }
+
+        return $this->updateLocalProgressData($this->progress);
+    }
+
+    /**
+     * Get the current step.
+     */
+    public function getStep(): ?int {
+        return $this->currentStep;
+    }
+
+    /**
+     * Increment the current step.
+     *
+     * @param  int  $amount  The amount to increment.
+     * @return $this
+     */
+    public function incrementStep(int $amount = 1): static {
+        $current = $this->currentStep ?? 0;
+
+        return $this->setStep($current + $amount);
     }
 }
