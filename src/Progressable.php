@@ -2,6 +2,7 @@
 
 namespace Verseles\Progressable;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Verseles\Progressable\Exceptions\UniqueNameAlreadySetException;
 use Verseles\Progressable\Exceptions\UniqueNameNotSetException;
@@ -26,6 +27,11 @@ trait Progressable {
      * The current step of the progress.
      */
     protected ?int $currentStep = null;
+
+    /**
+     * The timestamp when the progress started.
+     */
+    protected ?int $startTime = null;
 
     /**
      * The callback function for saving cache data.
@@ -219,6 +225,8 @@ trait Progressable {
      * @throws UniqueNameNotSetException
      */
     public function resetLocalProgress(): static {
+        $this->startTime = Carbon::now()->timestamp;
+
         return $this->setLocalProgress(0);
     }
 
@@ -245,6 +253,36 @@ trait Progressable {
      */
     public function isOverallComplete(): bool {
         return $this->getOverallProgress(0) >= 100;
+    }
+
+    /**
+     * Get the estimated time remaining in seconds.
+     */
+    public function getEstimatedTimeRemaining(): ?int {
+        if ($this->progress >= 100) {
+            return 0;
+        }
+
+        if ($this->startTime === null) {
+            // Try to load from storage
+            $progressData = $this->getOverallProgressData();
+            $this->startTime = $progressData[$this->getLocalKey()]['start_time'] ?? null;
+        }
+
+        if ($this->startTime === null || $this->progress <= 0) {
+            return null;
+        }
+
+        $elapsed = Carbon::now()->timestamp - $this->startTime;
+
+        if ($elapsed <= 0) {
+            return null;
+        }
+
+        $rate = $this->progress / $elapsed; // progress per second
+        $remainingProgress = 100 - $this->progress;
+
+        return (int) round($remainingProgress / $rate);
     }
 
     /**
@@ -303,9 +341,19 @@ trait Progressable {
     protected function updateLocalProgressData(float $progress): static {
         $progressData = $this->getOverallProgressData();
 
+        // Recover start_time if null and not resetting (progress >= 0)
+        if ($this->startTime === null && $progress >= 0) {
+            $currentData = $progressData[$this->getLocalKey()] ?? [];
+            $this->startTime = $currentData['start_time'] ?? Carbon::now()->timestamp;
+        }
+
         $localData = [
             'progress' => $progress,
         ];
+
+        if ($this->startTime !== null) {
+            $localData['start_time'] = $this->startTime;
+        }
 
         if ($this->statusMessage !== null) {
             $localData['message'] = $this->statusMessage;
