@@ -2,6 +2,7 @@
 
 namespace Verseles\Progressable\Tests;
 
+use Illuminate\Support\Carbon;
 use Orchestra\Testbench\TestCase;
 use Verseles\Progressable\Exceptions\UniqueNameAlreadySetException;
 use Verseles\Progressable\Exceptions\UniqueNameNotSetException;
@@ -552,5 +553,59 @@ class ProgressableTest extends TestCase {
 
         $this->assertEquals(5, $this->getStep());
         $this->assertEquals(0, $this->getLocalProgress());
+    }
+
+    public function test_to_array_structure(): void {
+        Carbon::setTestNow(Carbon::now());
+        $this->setOverallUniqueName('test_to_array_' . $this->testId);
+
+        // Setup state
+        $this->setTotalSteps(100);
+        $this->setStep(50); // Sets progress to 50%
+        $this->setStatusMessage('Halfway there');
+        $this->setMetadata(['foo' => 'bar']);
+
+        // Advance time to allow ETA calculation
+        Carbon::setTestNow(Carbon::now()->addSeconds(10));
+        // Progress 0 -> 50 in 10 seconds. Rate 5% / sec. Remaining 50%. ETA 10s.
+        $this->setLocalProgress(50);
+
+        $array = $this->toArray();
+
+        $this->assertIsArray($array);
+        $this->assertArrayHasKey('progress', $array);
+        $this->assertArrayHasKey('overall_progress', $array);
+        $this->assertArrayHasKey('message', $array);
+        $this->assertArrayHasKey('metadata', $array);
+        $this->assertArrayHasKey('current_step', $array);
+        $this->assertArrayHasKey('total_steps', $array);
+        $this->assertArrayHasKey('estimated_time_remaining', $array);
+        $this->assertArrayHasKey('is_complete', $array);
+        $this->assertArrayHasKey('is_overall_complete', $array);
+
+        $this->assertEquals(50, $array['progress']);
+        $this->assertEquals(50, $array['overall_progress']);
+        $this->assertEquals('Halfway there', $array['message']);
+        $this->assertEquals(['foo' => 'bar'], $array['metadata']);
+        $this->assertEquals(50, $array['current_step']);
+        $this->assertEquals(100, $array['total_steps']);
+        // ETA calculation might vary slightly depending on exact timing, but should be around 10
+        $this->assertEquals(10, $array['estimated_time_remaining']);
+        $this->assertFalse($array['is_complete']);
+    }
+
+    public function test_to_array_minimal(): void {
+        $this->setOverallUniqueName('test_to_array_minimal_' . $this->testId);
+
+        $array = $this->toArray();
+
+        $this->assertEquals(0, $array['progress']);
+        $this->assertEquals(0, $array['overall_progress']);
+        $this->assertNull($array['message']);
+        $this->assertEmpty($array['metadata']);
+        $this->assertNull($array['current_step']);
+        $this->assertNull($array['total_steps']);
+        $this->assertNull($array['estimated_time_remaining']);
+        $this->assertFalse($array['is_complete']);
     }
 }

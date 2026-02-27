@@ -644,4 +644,21 @@ trait Progressable {
 
         return $this->setStep($current + $amount);
     }
+
+    /**
+     * Get the progress data as an array.
+     */
+    public function toArray(): array {
+        return [
+            'progress' => $this->getLocalProgress(),
+            'overall_progress' => $this->getOverallProgress(),
+            'message' => $this->getStatusMessage(),
+            'metadata' => $this->getMetadata(),
+            'current_step' => $this->getStep(),
+            'total_steps' => $this->getTotalSteps(),
+            'estimated_time_remaining' => $this->getEstimatedTimeRemaining(),
+            'is_complete' => $this->isComplete(),
+            'is_overall_complete' => $this->isOverallComplete(),
+        ];
+    }
 }
