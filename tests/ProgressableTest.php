@@ -553,4 +553,43 @@ class ProgressableTest extends TestCase {
         $this->assertEquals(5, $this->getStep());
         $this->assertEquals(0, $this->getLocalProgress());
     }
+
+    public function test_to_array(): void {
+        $this->setOverallUniqueName('test_to_array_'.$this->testId);
+        $this->setTotalSteps(10);
+        $this->setStep(5);
+        $this->setStatusMessage('Processing item 5');
+        $this->setMetadata(['foo' => 'bar']);
+
+        $array = $this->toArray();
+
+        $this->assertIsArray($array);
+        $this->assertArrayHasKey('progress', $array);
+        $this->assertEquals(50, $array['progress']);
+        $this->assertArrayHasKey('overall_progress', $array);
+        $this->assertEquals(50, $array['overall_progress']);
+        $this->assertArrayHasKey('total_steps', $array);
+        $this->assertEquals(10, $array['total_steps']);
+        $this->assertArrayHasKey('current_step', $array);
+        $this->assertEquals(5, $array['current_step']);
+        $this->assertArrayHasKey('eta', $array);
+        // ETA depends on start time and elapsed time, which might be null if 0 time elapsed
+        $this->assertArrayHasKey('status_message', $array);
+        $this->assertEquals('Processing item 5', $array['status_message']);
+        $this->assertArrayHasKey('metadata', $array);
+        $this->assertEquals(['foo' => 'bar'], $array['metadata']);
+    }
+
+    public function test_to_array_without_unique_name(): void {
+        // Just checking toArray when no unique name is set
+        $array = $this->toArray();
+
+        $this->assertIsArray($array);
+        $this->assertEquals(0, $array['progress']);
+        $this->assertNull($array['overall_progress']);
+        $this->assertNull($array['total_steps']);
+        $this->assertNull($array['current_step']);
+        $this->assertNull($array['status_message']);
+        $this->assertEquals([], $array['metadata']);
+    }
 }
