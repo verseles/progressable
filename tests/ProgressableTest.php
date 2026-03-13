@@ -553,4 +553,61 @@ class ProgressableTest extends TestCase {
         $this->assertEquals(5, $this->getStep());
         $this->assertEquals(0, $this->getLocalProgress());
     }
+
+    public function test_to_array(): void {
+        $this->setOverallUniqueName('test_to_array_'.$this->testId);
+        $this->setTotalSteps(10);
+        $this->setStep(5);
+        $this->setStatusMessage('Halfway there');
+        $this->setMetadata(['foo' => 'bar']);
+
+        $expected = [
+            'progress' => 50.0,
+            'overall_progress' => 50.0,
+            'is_complete' => false,
+            'is_overall_complete' => false,
+            'estimated_time_remaining' => null, // null because of timing in tests without setting up carbon
+            'message' => 'Halfway there',
+            'metadata' => ['foo' => 'bar'],
+            'total_steps' => 10,
+            'current_step' => 5,
+        ];
+
+        $array = $this->toArray();
+
+        $this->assertEquals($expected['progress'], $array['progress']);
+        $this->assertEquals($expected['overall_progress'], $array['overall_progress']);
+        $this->assertEquals($expected['is_complete'], $array['is_complete']);
+        $this->assertEquals($expected['is_overall_complete'], $array['is_overall_complete']);
+        $this->assertEquals($expected['message'], $array['message']);
+        $this->assertEquals($expected['metadata'], $array['metadata']);
+        $this->assertEquals($expected['total_steps'], $array['total_steps']);
+        $this->assertEquals($expected['current_step'], $array['current_step']);
+    }
+
+    public function test_to_array_without_unique_name(): void {
+        // Because setStep triggers updateLocalProgressData which calls getOverallProgressData
+        // which requires overallUniqueName, we can only test setting the fields that don't trigger it
+        // or we should avoid calling setStep. We can set progress using reflection, or just use
+        // the default state without overallUniqueName.
+        $this->progress = 50.0;
+        $this->totalSteps = 10;
+        $this->currentStep = 5;
+        $this->statusMessage = 'Halfway there';
+        $this->metadata = ['foo' => 'bar'];
+
+        $expected = [
+            'progress' => 50.0,
+            'overall_progress' => null,
+            'is_complete' => false,
+            'is_overall_complete' => null,
+            'estimated_time_remaining' => null,
+            'message' => 'Halfway there',
+            'metadata' => ['foo' => 'bar'],
+            'total_steps' => 10,
+            'current_step' => 5,
+        ];
+
+        $this->assertEquals($expected, $this->toArray());
+    }
 }
