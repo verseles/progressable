@@ -658,7 +658,7 @@ trait Progressable {
             'overall_progress' => $hasUniqueName ? $this->getOverallProgress() : null,
             'is_complete' => $this->isComplete(),
             'is_overall_complete' => $hasUniqueName ? $this->isOverallComplete() : null,
-            'estimated_time_remaining' => null,
+            'estimated_time_remaining' => $hasUniqueName ? $this->getEstimatedTimeRemaining() : null,
             'message' => $this->getStatusMessage(),
             'metadata' => $this->getMetadata(),
             'total_steps' => $this->getTotalSteps(),
