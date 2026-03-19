@@ -553,4 +553,44 @@ class ProgressableTest extends TestCase {
         $this->assertEquals(5, $this->getStep());
         $this->assertEquals(0, $this->getLocalProgress());
     }
+
+    public function test_to_array(): void {
+        $this->setOverallUniqueName('test_to_array_'.$this->testId);
+        $this->setTotalSteps(10);
+        $this->setStep(5);
+        $this->setStatusMessage('Halfway there');
+        $this->setMetadata(['foo' => 'bar']);
+
+        $array = $this->toArray();
+
+        $this->assertEquals(50.0, $array['progress']);
+        $this->assertEquals(50.0, $array['overall_progress']);
+        $this->assertFalse($array['is_complete']);
+        $this->assertFalse($array['is_overall_complete']);
+        $this->assertNull($array['estimated_time_remaining']);
+        $this->assertEquals('Halfway there', $array['message']);
+        $this->assertEquals(['foo' => 'bar'], $array['metadata']);
+        $this->assertEquals(10, $array['total_steps']);
+        $this->assertEquals(5, $array['current_step']);
+    }
+
+    public function test_to_array_without_unique_name(): void {
+        $this->progress = 50.0;
+        $this->totalSteps = 10;
+        $this->currentStep = 5;
+        $this->statusMessage = 'Halfway there';
+        $this->metadata = ['foo' => 'bar'];
+
+        $this->assertEquals([
+            'progress' => 50.0,
+            'overall_progress' => null,
+            'is_complete' => false,
+            'is_overall_complete' => null,
+            'estimated_time_remaining' => null,
+            'message' => 'Halfway there',
+            'metadata' => ['foo' => 'bar'],
+            'total_steps' => 10,
+            'current_step' => 5,
+        ], $this->toArray());
+    }
 }
