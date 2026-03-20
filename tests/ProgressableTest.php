@@ -587,10 +587,81 @@ class ProgressableTest extends TestCase {
             'is_complete' => false,
             'is_overall_complete' => null,
             'estimated_time_remaining' => null,
+            'overall_estimated_time_remaining' => null,
             'message' => 'Halfway there',
             'metadata' => ['foo' => 'bar'],
             'total_steps' => 10,
             'current_step' => 5,
         ], $this->toArray());
+    }
+
+    public function test_get_estimated_time_remaining(): void {
+        $uniqueName = 'test_eta_'.$this->testId;
+        $this->setOverallUniqueName($uniqueName);
+
+        \Illuminate\Support\Carbon::setTestNow('2024-01-01 10:00:00');
+        $this->resetLocalProgress(); // Start progress at 0
+
+        // Time elapses, but progress is 0, should be null
+        \Illuminate\Support\Carbon::setTestNow('2024-01-01 10:00:10'); // 10 seconds later
+        $this->assertNull($this->getEstimatedTimeRemaining());
+
+        // Update progress to 25% after 10 seconds
+        // Rate is 25% / 10 seconds = 2.5% per second
+        // Remaining progress is 75%. ETA should be 75 / 2.5 = 30 seconds
+        $this->setLocalProgress(25);
+        $this->assertEquals(30, $this->getEstimatedTimeRemaining());
+
+        // Update progress to 50% after another 10 seconds (total 20s elapsed)
+        // Rate is 50% / 20 seconds = 2.5% per second
+        // Remaining progress is 50%. ETA should be 50 / 2.5 = 20 seconds
+        \Illuminate\Support\Carbon::setTestNow('2024-01-01 10:00:20'); // 20 seconds later
+        $this->setLocalProgress(50);
+        $this->assertEquals(20, $this->getEstimatedTimeRemaining());
+
+        // Progress is 100%, ETA should be 0
+        $this->setLocalProgress(100);
+        $this->assertEquals(0, $this->getEstimatedTimeRemaining());
+
+        \Illuminate\Support\Carbon::setTestNow(); // Reset mocked time
+    }
+
+    public function test_get_overall_estimated_time_remaining(): void {
+        $uniqueName = 'test_overall_eta_'.$this->testId;
+        $this->setOverallUniqueName($uniqueName);
+
+        \Illuminate\Support\Carbon::setTestNow('2024-01-01 10:00:00');
+        $this->resetLocalProgress(); // Task 1 starts
+
+        $obj2 = new class {
+            use Progressable;
+        };
+        $obj2->setOverallUniqueName($uniqueName);
+        $obj2->resetLocalProgress(); // Task 2 starts
+
+        // 10 seconds pass
+        \Illuminate\Support\Carbon::setTestNow('2024-01-01 10:00:10');
+
+        // Task 1 gets to 20%, Task 2 gets to 30% -> Overall is 25%
+        $this->setLocalProgress(20);
+        $obj2->setLocalProgress(30);
+
+        // Overall progress: 25%. Elapsed time: 10s. Rate: 2.5% per second.
+        // Remaining progress: 75%. ETA: 75 / 2.5 = 30 seconds.
+        $this->assertEquals(30, $this->getOverallEstimatedTimeRemaining());
+
+        // Task 1 completes, Task 2 stays at 30% -> Overall is 65%
+        \Illuminate\Support\Carbon::setTestNow('2024-01-01 10:00:26'); // 26 seconds elapsed
+        $this->setLocalProgress(100);
+
+        // Overall progress: 65%. Elapsed time: 26s. Rate: 65 / 26 = 2.5% per second.
+        // Remaining progress: 35%. ETA: 35 / 2.5 = 14 seconds.
+        $this->assertEquals(14, $this->getOverallEstimatedTimeRemaining());
+
+        // Both complete
+        $obj2->setLocalProgress(100);
+        $this->assertEquals(0, $this->getOverallEstimatedTimeRemaining());
+
+        \Illuminate\Support\Carbon::setTestNow(); // Reset mocked time
     }
 }
