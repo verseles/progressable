@@ -286,6 +286,45 @@ trait Progressable {
     }
 
     /**
+     * Get the estimated time remaining in seconds for the overall progress.
+     *
+     * @throws UniqueNameNotSetException
+     */
+    public function getOverallEstimatedTimeRemaining(): ?int {
+        $overallProgress = $this->getOverallProgress(0);
+
+        if ($overallProgress >= 100) {
+            return 0;
+        }
+
+        $progressData = $this->getOverallProgressData();
+        $earliestStartTime = null;
+
+        foreach ($progressData as $localData) {
+            if (isset($localData['start_time'])) {
+                if ($earliestStartTime === null || $localData['start_time'] < $earliestStartTime) {
+                    $earliestStartTime = $localData['start_time'];
+                }
+            }
+        }
+
+        if ($earliestStartTime === null || $overallProgress <= 0) {
+            return null;
+        }
+
+        $elapsed = Carbon::now()->timestamp - $earliestStartTime;
+
+        if ($elapsed <= 0) {
+            return null;
+        }
+
+        $rate = $overallProgress / $elapsed; // progress per second
+        $remainingProgress = 100 - $overallProgress;
+
+        return (int) round($remainingProgress / $rate);
+    }
+
+    /**
      * Remove this instance from the overall progress calculation.
      *
      *
@@ -659,6 +698,7 @@ trait Progressable {
             'is_complete' => $this->isComplete(),
             'is_overall_complete' => $hasUniqueName ? $this->isOverallComplete() : null,
             'estimated_time_remaining' => $hasUniqueName ? $this->getEstimatedTimeRemaining() : null,
+            'overall_estimated_time_remaining' => $hasUniqueName ? $this->getOverallEstimatedTimeRemaining() : null,
             'message' => $this->getStatusMessage(),
             'metadata' => $this->getMetadata(),
             'total_steps' => $this->getTotalSteps(),

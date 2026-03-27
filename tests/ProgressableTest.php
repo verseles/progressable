@@ -568,6 +568,7 @@ class ProgressableTest extends TestCase {
         $this->assertFalse($array['is_complete']);
         $this->assertFalse($array['is_overall_complete']);
         $this->assertNull($array['estimated_time_remaining']);
+        $this->assertNull($array['overall_estimated_time_remaining']);
         $this->assertEquals('Halfway there', $array['message']);
         $this->assertEquals(['foo' => 'bar'], $array['metadata']);
         $this->assertEquals(10, $array['total_steps']);
@@ -587,6 +588,7 @@ class ProgressableTest extends TestCase {
             'is_complete' => false,
             'is_overall_complete' => null,
             'estimated_time_remaining' => null,
+            'overall_estimated_time_remaining' => null,
             'message' => 'Halfway there',
             'metadata' => ['foo' => 'bar'],
             'total_steps' => 10,

@@ -137,4 +137,69 @@ class EtaTest extends TestCase {
 
         $this->assertEquals(40, $obj2->getEstimatedTimeRemaining());
     }
+
+    public function test_overall_eta_is_null_initially(): void {
+        $this->setOverallUniqueName('test_overall_eta_init_'.$this->testId);
+        if (method_exists($this, 'getOverallEstimatedTimeRemaining')) {
+            $this->assertNull($this->getOverallEstimatedTimeRemaining());
+        } else {
+            $this->markTestSkipped('getOverallEstimatedTimeRemaining not implemented yet');
+        }
+    }
+
+    public function test_overall_eta_calculation(): void {
+        if (! method_exists($this, 'getOverallEstimatedTimeRemaining')) {
+            $this->markTestSkipped('getOverallEstimatedTimeRemaining not implemented yet');
+        }
+
+        Carbon::setTestNow(Carbon::now());
+        $uniqueName = 'test_overall_eta_calc_'.$this->testId;
+
+        $this->setOverallUniqueName($uniqueName);
+        $this->setLocalProgress(0); // Start time set at T0
+
+        // Create new instance simulating another process or request
+        $obj2 = new class {
+            use Progressable;
+        };
+        $obj2->setOverallUniqueName($uniqueName);
+
+        // Advance time by 10 seconds
+        Carbon::setTestNow(Carbon::now()->addSeconds(10));
+
+        // obj1 progress to 10%
+        $this->setLocalProgress(10);
+
+        // obj2 progress to 10%
+        $obj2->setLocalProgress(10);
+
+        // Overall progress = 10%. Elapsed = 10s. Rate = 1% / s.
+        // Remaining 90%. ETA = 90s.
+        $this->assertEquals(90, $this->getOverallEstimatedTimeRemaining());
+        $this->assertEquals(90, $obj2->getOverallEstimatedTimeRemaining());
+
+        // Advance time by another 10 seconds (total 20s)
+        Carbon::setTestNow(Carbon::now()->addSeconds(10));
+
+        // obj1 progress to 50%
+        $this->setLocalProgress(50);
+
+        // obj2 progress to 50%
+        $obj2->setLocalProgress(50);
+
+        // Overall progress = 50%. Elapsed = 20s. Rate = 2.5% / s.
+        // Remaining 50%. ETA = 50 / 2.5 = 20s.
+        $this->assertEquals(20, $this->getOverallEstimatedTimeRemaining());
+        $this->assertEquals(20, $obj2->getOverallEstimatedTimeRemaining());
+    }
+
+    public function test_overall_eta_is_zero_when_complete(): void {
+        if (! method_exists($this, 'getOverallEstimatedTimeRemaining')) {
+            $this->markTestSkipped('getOverallEstimatedTimeRemaining not implemented yet');
+        }
+
+        $this->setOverallUniqueName('test_overall_eta_complete_'.$this->testId);
+        $this->setLocalProgress(100);
+        $this->assertEquals(0, $this->getOverallEstimatedTimeRemaining());
+    }
 }
