@@ -252,7 +252,19 @@ trait Progressable {
      * Check if the overall progress is complete (100%).
      */
     public function isOverallComplete(): bool {
-        return $this->getOverallProgress(0) >= 100;
+        $progressData = $this->getOverallProgressData();
+
+        if (empty($progressData)) {
+            return false;
+        }
+
+        foreach ($progressData as $data) {
+            if (($data['progress'] ?? 0) < 100) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
