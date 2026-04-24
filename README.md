@@ -80,6 +80,8 @@ class MyFirstTask
 | `getOverallProgress(?int $precision)` | Get average progress of all instances |
 | `resetOverallProgress()` | Clear all progress data for the group |
 | `removeLocalFromOverall()` | Remove this instance from overall calculation |
+| `getEstimatedTimeRemaining()` | Get estimated time remaining in seconds for this instance |
+| `getOverallEstimatedTimeRemaining()` | Get estimated time remaining in seconds for the overall progress |
 
 #### Status Checks
 
