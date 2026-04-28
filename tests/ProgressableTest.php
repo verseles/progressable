@@ -587,6 +587,7 @@ class ProgressableTest extends TestCase {
             'is_complete' => false,
             'is_overall_complete' => null,
             'estimated_time_remaining' => null,
+            'overall_estimated_time_remaining' => null,
             'message' => 'Halfway there',
             'metadata' => ['foo' => 'bar'],
             'total_steps' => 10,

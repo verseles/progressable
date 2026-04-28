@@ -1,24 +1,22 @@
 <?php
+
 namespace Verseles\Progressable\Tests;
 
-use Verseles\Progressable\Progressable;
 use Orchestra\Testbench\TestCase;
+use Verseles\Progressable\Progressable;
 
-class DummyProgressableOverallComplete
-{
+class DummyProgressableOverallComplete {
     use Progressable;
 }
 
-class IsOverallCompleteBugTest extends TestCase
-{
-    public function testIsOverallCompleteIsAccurateAndDoesNotReturnTruePrematurely()
-    {
-        $a = new DummyProgressableOverallComplete();
+class IsOverallCompleteBugTest extends TestCase {
+    public function test_is_overall_complete_is_accurate_and_does_not_return_true_prematurely() {
+        $a = new DummyProgressableOverallComplete;
         $a->setOverallUniqueName('test-overall-complete-bug');
         $a->setLocalKey('a');
         $a->setLocalProgress(100);
 
-        $b = new DummyProgressableOverallComplete();
+        $b = new DummyProgressableOverallComplete;
         $b->setOverallUniqueName('test-overall-complete-bug');
         $b->setLocalKey('b');
         $b->setLocalProgress(99.4);
