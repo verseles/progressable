@@ -439,6 +439,11 @@ trait Progressable {
      */
     public function setLocalKey(string $name): static {
         $currentKey = $this->getLocalKey();
+
+        if ($name === $currentKey) {
+            return $this;
+        }
+
         $overallProgressData = $this->getOverallProgressData();
 
         if (isset($overallProgressData[$currentKey])) {
