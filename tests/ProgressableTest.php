@@ -594,4 +594,16 @@ class ProgressableTest extends TestCase {
             'current_step' => 5,
         ], $this->toArray());
     }
+
+    public function test_set_local_key_with_same_name_preserves_data(): void {
+        $this->setOverallUniqueName('test_local_key_preserves_data_'.$this->testId);
+        $this->setLocalProgress(50);
+        $before = $this->getOverallProgressData();
+
+        $key = $this->getLocalKey();
+        $this->setLocalKey($key);
+
+        $after = $this->getOverallProgressData();
+        $this->assertEquals($before, $after);
+    }
 }
