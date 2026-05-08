@@ -460,7 +460,7 @@ trait Progressable {
 
         if (isset($overallProgressData[$currentKey])) {
             // Rename the local key preserving the data, but do not overwrite existing target data
-            if (!isset($overallProgressData[$name])) {
+            if (! isset($overallProgressData[$name])) {
                 $overallProgressData[$name] = $overallProgressData[$currentKey];
             }
             unset($overallProgressData[$currentKey]);

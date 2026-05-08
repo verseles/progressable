@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-05-08
+
+### Added
+- **Laravel 13 Support**: Compatible with `illuminate/*` ^13 packages
+- **Step-based Progress**: Track progress by discrete steps
+  - `setTotalSteps(int $totalSteps)` / `getTotalSteps()` - Define total steps
+  - `setStep(int $step)` / `getStep()` - Set/get current step (auto-calculates percentage)
+  - `incrementStep(int $amount = 1)` - Advance current step
+- **Estimated Time Remaining**:
+  - `getEstimatedTimeRemaining()` - Local ETA in seconds based on elapsed time
+  - `getOverallEstimatedTimeRemaining()` - Overall ETA using earliest start time across instances
+- **Array Export**: `toArray()` exports the full progress snapshot as an associative array
+- **Metadata Merge**: `mergeMetadata(array $metadata)` merges metadata without overwriting existing keys
+
+### Fixed
+- `isOverallComplete()` now accurately checks each individual instance instead of relying on the rounded average, preventing false positives
+- `setLocalKey()` data loss bug when called with the same name as the current key
+- `setLocalKey()` now preserves existing target data when renaming keys
+- `makeSureLocalIsPartOfTheCalc()` no longer overwrites existing cached progress to 0 when reinstantiating with the same `localKey`
+
+## [2.1.0] - 2025-03-XX
+
+### Changed
+- PHP requirement raised to 8.4
+- Added Laravel 12 and PHPUnit 12 support
+
 ## [2.0.0] - 2025-01-XX
 
 ### Added

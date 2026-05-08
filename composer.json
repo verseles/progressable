@@ -11,9 +11,9 @@
   ],
   "require": {
     "php": ">=8.4",
-    "illuminate/support": "^v11|^v12",
-    "illuminate/cache": "^11|^v12",
-    "illuminate/contracts": "^11|^v12"
+    "illuminate/support": "^v11|^v12|^v13",
+    "illuminate/cache": "^11|^v12|^v13",
+    "illuminate/contracts": "^11|^v12|^v13"
   },
   "autoload": {
     "psr-4": {
