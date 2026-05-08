@@ -204,9 +204,21 @@ trait Progressable {
      * @throws UniqueNameNotSetException
      */
     public function makeSureLocalIsPartOfTheCalc(): void {
-        if ($this->getLocalProgress(0) == 0) {
-            // This make sure that the class who called this method will be part of the overall progress calculation
-            $this->resetLocalProgress();
+        if ($this->progress == 0) {
+            $progressData = $this->getOverallProgressData();
+            $localKey = $this->getLocalKey();
+
+            if (isset($progressData[$localKey])) {
+                $localData = $progressData[$localKey];
+                $this->progress = $localData['progress'] ?? 0;
+                $this->startTime = $localData['start_time'] ?? null;
+                $this->statusMessage = $localData['message'] ?? null;
+                $this->totalSteps = $localData['total_steps'] ?? null;
+                $this->currentStep = $localData['current_step'] ?? null;
+                $this->metadata = $localData['metadata'] ?? [];
+            } else {
+                $this->resetLocalProgress();
+            }
         }
     }
 
@@ -442,8 +454,10 @@ trait Progressable {
         $overallProgressData = $this->getOverallProgressData();
 
         if (isset($overallProgressData[$currentKey])) {
-            // Rename the local key preserving the data
-            $overallProgressData[$name] = $overallProgressData[$currentKey];
+            // Rename the local key preserving the data, but do not overwrite existing target data
+            if (!isset($overallProgressData[$name])) {
+                $overallProgressData[$name] = $overallProgressData[$currentKey];
+            }
             unset($overallProgressData[$currentKey]);
             $this->saveOverallProgressData($overallProgressData);
         }
