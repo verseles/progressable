@@ -33,7 +33,7 @@
     }
   },
   "scripts": {
-    "test": "vendor/bin/phpunit tests/ProgressableTest.php --testdox",
+    "test": "vendor/bin/phpunit tests --testdox",
     "lint": "vendor/bin/pint",
     "lint:test": "vendor/bin/pint --test",
     "analyse": "vendor/bin/phpstan analyse"

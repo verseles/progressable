@@ -42,6 +42,16 @@ The `Progressable` trait can be used in any class that needs to track progress.
 
 "Local" refers to the progress of your class/model/etc, while "Overall" represents the average of all Progressable instances using the same unique name.
 
+For parallel jobs, use one stable overall key for the parent operation and one stable local key per worker. The default cache-backed store updates each local entry independently under a cache lock when the cache driver supports atomic locks. Under heavy contention, Laravel may throw `Illuminate\Contracts\Cache\LockTimeoutException` if the lock cannot be acquired before the wait timeout.
+
+```php
+$progress->setOverallUniqueName("routine-run:{$runId}");
+$progress->setLocalKey("module:{$moduleId}");
+$progress->setLocalProgress(42);
+```
+
+Custom `setCustomSaveData()` / `setCustomGetData()` callbacks still receive the full progress snapshot, so custom storage should implement its own concurrency control for parallel writers.
+
 ### Basic Example
 
 ```php

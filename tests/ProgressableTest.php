@@ -116,6 +116,16 @@ class ProgressableTest extends TestCase {
         $this->assertArrayHasKey('my_custom_key', $progressData);
     }
 
+    public function test_set_local_key_before_unique_name_registers_stable_key(): void {
+        $this->setLocalKey('module:first');
+        $this->setOverallUniqueName('test_local_key_first_'.$this->testId);
+
+        $progressData = $this->getOverallProgressData();
+
+        $this->assertCount(1, $progressData);
+        $this->assertArrayHasKey('module:first', $progressData);
+    }
+
     public function test_set_local_key_preserves_progress_data(): void {
         $this->setOverallUniqueName('test_local_key_rename_'.$this->testId);
         $this->setLocalKey('original_key');

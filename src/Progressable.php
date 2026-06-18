@@ -4,8 +4,10 @@ namespace Verseles\Progressable;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Verseles\Progressable\Contracts\ProgressStore;
 use Verseles\Progressable\Exceptions\UniqueNameAlreadySetException;
 use Verseles\Progressable\Exceptions\UniqueNameNotSetException;
+use Verseles\Progressable\Stores\CacheProgressStore;
 
 trait Progressable {
     /**
@@ -155,7 +157,14 @@ trait Progressable {
             return call_user_func($this->customGetData, $this->getStorageKeyName());
         }
 
-        return Cache::get($this->getStorageKeyName(), []);
+        return $this->getProgressStore()->getAll($this->getStorageKeyName());
+    }
+
+    /**
+     * Get the local-entry-aware progress store.
+     */
+    protected function getProgressStore(): ProgressStore {
+        return new CacheProgressStore;
     }
 
     /**
@@ -353,13 +362,25 @@ trait Progressable {
      * @throws UniqueNameNotSetException
      */
     public function removeLocalFromOverall(): static {
-        $progressData = $this->getOverallProgressData();
-        $localKey = $this->getLocalKey();
+        if (! $this->usesDefaultProgressStore()) {
+            $progressData = $this->getOverallProgressData();
+            $localKey = $this->getLocalKey();
 
-        if (isset($progressData[$localKey])) {
-            unset($progressData[$localKey]);
-            $this->saveOverallProgressData($progressData);
+            if (isset($progressData[$localKey])) {
+                unset($progressData[$localKey]);
+                $this->saveOverallProgressData($progressData);
+            }
+
+            $this->progress = 0;
+
+            return $this;
         }
+
+        $this->getProgressStore()->removeLocal(
+            $this->getStorageKeyName(),
+            $this->getLocalKey(),
+            $this->getTTL()
+        );
 
         $this->progress = 0;
 
@@ -400,10 +421,11 @@ trait Progressable {
      * Update the progress data in storage.
      */
     protected function updateLocalProgressData(float $progress): static {
-        $progressData = $this->getOverallProgressData();
+        $progressData = [];
 
         // Recover start_time if null and not resetting (progress >= 0)
         if ($this->startTime === null && $progress >= 0) {
+            $progressData = $this->getOverallProgressData();
             $currentData = $progressData[$this->getLocalKey()] ?? [];
             $this->startTime = $currentData['start_time'] ?? Carbon::now()->timestamp;
         }
@@ -432,9 +454,24 @@ trait Progressable {
             $localData['metadata'] = $this->metadata;
         }
 
-        $progressData[$this->getLocalKey()] = $localData;
+        if (! $this->usesDefaultProgressStore()) {
+            if ($progressData === []) {
+                $progressData = $this->getOverallProgressData();
+            }
 
-        return $this->saveOverallProgressData($progressData);
+            $progressData[$this->getLocalKey()] = $localData;
+
+            return $this->saveOverallProgressData($progressData);
+        }
+
+        $this->getProgressStore()->putLocal(
+            $this->getStorageKeyName(),
+            $this->getLocalKey(),
+            $localData,
+            $this->getTTL()
+        );
+
+        return $this;
     }
 
     /**
@@ -453,6 +490,27 @@ trait Progressable {
         $currentKey = $this->getLocalKey();
 
         if ($name === $currentKey) {
+            return $this;
+        }
+
+        if (! isset($this->overallUniqueName) || empty($this->overallUniqueName)) {
+            $this->localKey = $name;
+
+            return $this;
+        }
+
+        if ($this->usesDefaultProgressStore()) {
+            $this->getProgressStore()->renameLocal(
+                $this->getStorageKeyName(),
+                $currentKey,
+                $name,
+                $this->getTTL()
+            );
+
+            $this->localKey = $name;
+
+            $this->makeSureLocalIsPartOfTheCalc();
+
             return $this;
         }
 
@@ -486,7 +544,7 @@ trait Progressable {
                 $this->getTTL()
             );
         } else {
-            Cache::put($this->getStorageKeyName(), $progressData, $this->getTTL());
+            Cache::put($this->getStorageKeyName(), $progressData, $this->getTTL() * 60);
         }
 
         return $this;
@@ -503,7 +561,17 @@ trait Progressable {
      * Reset the overall progress.
      */
     public function resetOverallProgress(): static {
-        return $this->saveOverallProgressData([]);
+        if (! $this->usesDefaultProgressStore()) {
+            return $this->saveOverallProgressData([]);
+        }
+
+        $this->getProgressStore()->resetOverall($this->getStorageKeyName());
+
+        return $this;
+    }
+
+    protected function usesDefaultProgressStore(): bool {
+        return $this->customSaveData === null && $this->customGetData === null;
     }
 
     /**
