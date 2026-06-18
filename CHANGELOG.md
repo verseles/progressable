@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-06-18
+
+### Added
+- **Concurrent-safe progress storage**: new `Verseles\Progressable\Contracts\ProgressStore` contract and `Stores\CacheProgressStore` default implementation that update each local entry independently under a cache lock when the cache driver supports atomic locks (Closes #21)
+- `setLocalKey()` now registers a stable local key when called before `setOverallUniqueName()`
+
+### Changed
+- Default cache-backed storage now uses the new `CacheProgressStore`, so per-local updates, renames, and resets are lock-aware when supported
+- `setLocalProgress()`, `setLocalKey()`, `removeLocalFromOverall()`, and `resetOverallProgress()` keep using custom `setCustomSaveData()` / `setCustomGetData()` callbacks unchanged; only the default cache path is routed through the new store
+
 ## [2.2.0] - 2026-05-08
 
 ### Added
