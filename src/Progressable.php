@@ -292,23 +292,33 @@ trait Progressable {
      * Get the estimated time remaining in seconds for the overall progress.
      */
     public function getOverallEstimatedTimeRemaining(): ?int {
-        $overallProgress = $this->getOverallProgress();
-
-        if ($overallProgress >= 100) {
-            return 0;
-        }
-
         $progressData = $this->getOverallProgressData();
 
         if (empty($progressData)) {
             return null;
         }
 
+        $totalProgress = 0;
+        $allComplete = true;
+
+        foreach ($progressData as $data) {
+            $progress = $data['progress'] ?? 0;
+            $totalProgress += $progress;
+
+            if ($progress < 100) {
+                $allComplete = false;
+            }
+        }
+
+        if ($allComplete) {
+            return 0;
+        }
+
         $startTimes = array_filter(array_column($progressData, 'start_time'), function ($time) {
             return $time !== null;
         });
 
-        if (empty($startTimes) || $overallProgress <= 0) {
+        if (empty($startTimes) || $totalProgress <= 0) {
             return null;
         }
 
@@ -316,6 +326,12 @@ trait Progressable {
         $elapsed = Carbon::now()->timestamp - $minStartTime;
 
         if ($elapsed <= 0) {
+            return null;
+        }
+
+        $overallProgress = $totalProgress / count($progressData);
+
+        if ($overallProgress <= 0) {
             return null;
         }
 
