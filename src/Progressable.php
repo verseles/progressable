@@ -292,9 +292,7 @@ trait Progressable {
      * Get the estimated time remaining in seconds for the overall progress.
      */
     public function getOverallEstimatedTimeRemaining(): ?int {
-        $overallProgress = $this->getOverallProgress();
-
-        if ($overallProgress >= 100) {
+        if ($this->isOverallComplete()) {
             return 0;
         }
 
@@ -304,11 +302,15 @@ trait Progressable {
             return null;
         }
 
+        $totalProgress = array_sum(array_column($progressData, 'progress'));
+        $totalCount = count($progressData);
+        $unroundedOverallProgress = $totalCount > 0 ? $totalProgress / $totalCount : 0;
+
         $startTimes = array_filter(array_column($progressData, 'start_time'), function ($time) {
             return $time !== null;
         });
 
-        if (empty($startTimes) || $overallProgress <= 0) {
+        if (empty($startTimes) || $unroundedOverallProgress <= 0) {
             return null;
         }
 
@@ -319,10 +321,10 @@ trait Progressable {
             return null;
         }
 
-        $rate = $overallProgress / $elapsed;
-        $remainingProgress = 100 - $overallProgress;
+        $rate = $unroundedOverallProgress / $elapsed;
+        $remainingProgress = 100 - $unroundedOverallProgress;
 
-        return (int) round($remainingProgress / $rate);
+        return (int) ceil($remainingProgress / $rate);
     }
 
     /**
@@ -352,7 +354,7 @@ trait Progressable {
         $rate = $this->progress / $elapsed; // progress per second
         $remainingProgress = 100 - $this->progress;
 
-        return (int) round($remainingProgress / $rate);
+        return (int) ceil($remainingProgress / $rate);
     }
 
     /**
