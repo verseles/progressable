@@ -74,4 +74,31 @@ class OverallEtaTest extends TestCase {
 
         $this->assertEquals(0, $this->getOverallEstimatedTimeRemaining());
     }
+
+    public function test_overall_eta_does_not_return_zero_prematurely_due_to_rounding(): void {
+        Carbon::setTestNow(Carbon::now());
+
+        $uniqueName = 'test_overall_eta_rounding_'.$this->testId;
+        $this->setOverallUniqueName($uniqueName);
+        $this->setLocalKey('process_1');
+        $this->setPrecision(0);
+        $this->setLocalProgress(0); // Set start time
+
+        $obj2 = new class {
+            use Progressable;
+        };
+        $obj2->setOverallUniqueName($uniqueName);
+        $obj2->setLocalKey('process_2');
+        $obj2->setPrecision(0);
+        $obj2->setLocalProgress(0); // Set start time
+
+        Carbon::setTestNow(Carbon::now()->addSeconds(10));
+
+        $this->setLocalProgress(100);
+        $obj2->setLocalProgress(99.4);
+
+        // Overall progress with precision 0 is round((100+99.4)/2) = round(99.7) = 100
+        // It shouldn't return 0 for ETA yet!
+        $this->assertGreaterThan(0, $this->getOverallEstimatedTimeRemaining());
+    }
 }
