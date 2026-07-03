@@ -178,7 +178,7 @@ trait Progressable {
      * Retrieve the prefix storage key for the PHP function.
      */
     protected function getPrefixStorageKey(): string {
-        return $this->customPrefixStorageKey ?? config('progressable.prefix', $this->defaultPrefixStorageKey);
+        return $this->customPrefixStorageKey ?? (function_exists('app') && app()->bound('config') ? config('progressable.prefix', $this->defaultPrefixStorageKey) : $this->defaultPrefixStorageKey);
     }
 
     /**
@@ -554,7 +554,7 @@ trait Progressable {
      * Get the storage time-to-live in minutes.
      */
     public function getTTL(): int {
-        return $this->customTTL ?? config('progressable.ttl', $this->defaultTTL);
+        return $this->customTTL ?? (function_exists('app') && app()->bound('config') ? config('progressable.ttl', $this->defaultTTL) : $this->defaultTTL);
     }
 
     /**
@@ -606,7 +606,7 @@ trait Progressable {
      * Get the precision for progress values.
      */
     public function getPrecision(): int {
-        return $this->customPrecision ?? config('progressable.precision', $this->defaultPrecision);
+        return $this->customPrecision ?? (function_exists('app') && app()->bound('config') ? config('progressable.precision', $this->defaultPrecision) : $this->defaultPrecision);
     }
 
     /**
